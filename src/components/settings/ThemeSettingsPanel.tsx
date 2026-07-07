@@ -1,10 +1,10 @@
-import { Box, Typography, Tooltip, Button, Grid, alpha } from '@mui/material'
+import { Box, Typography, Tooltip, Button, Grid, alpha, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import CheckIcon from '@mui/icons-material/Check'
 import { useAppStore } from '@/store/appStore'
-import { colorPresetList } from '@/theme/presets'
+import { colorPresetList, type ColorPresetId } from '@/theme/presets'
 import { v, mix } from '@/theme/cssVars'
 import { DataPanel } from '@/components/ui/DataPanel'
 import { primaryButtonSx } from '@/components/ui/PageShell'
@@ -14,12 +14,35 @@ export function ThemeSettingsPanel() {
 
   return (
     <Box sx={{ mb: 2 }}>
-      <DataPanel title="Color Theme" subtitle="Choose a preset, accent color, and light or dark mode for the portal">
+      <DataPanel title="Theme" subtitle="Choose your primary color, accent color, and light or dark mode">
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 7 }}>
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
-              Theme presets
+              Primary color
             </Typography>
+            <FormControl size="small" fullWidth sx={{ maxWidth: 360, mb: 1.5 }}>
+              <InputLabel id="primary-color-select-label">Primary color</InputLabel>
+              <Select
+                labelId="primary-color-select-label"
+                label="Primary color"
+                value={colorPreset}
+                onChange={(e) => setColorPreset(e.target.value as ColorPresetId)}
+              >
+                {colorPresetList.map((preset) => (
+                  <MenuItem key={preset.id} value={preset.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, width: '100%' }}>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Box sx={{ width: 14, height: 14, borderRadius: '4px', bgcolor: preset.swatch[0] }} />
+                        <Box sx={{ width: 14, height: 14, borderRadius: '4px', bgcolor: preset.swatch[1] }} />
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: v.textPrimary }}>
+                        {preset.label}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
               {colorPresetList.map((preset) => {
                 const selected = colorPreset === preset.id

@@ -263,7 +263,7 @@ function cfg(
     layout,
     domain,
     entityName: title.replace(/s$/, ''),
-    accentColor: '#1A2E25',
+    accentColor: 'var(--rs-primary)',
     statuses: [...(statusOptions[domain as keyof typeof statusOptions] ?? statusOptions.sales)],
     ...base,
     ...overrides,

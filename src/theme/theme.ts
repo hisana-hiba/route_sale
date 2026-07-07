@@ -161,7 +161,7 @@ export function createAppTheme(mode: 'light' | 'dark', preset: ColorPresetId = '
     palette: {
       mode,
       primary: { main: c.primary, light: c.primaryLight, dark: c.primaryDark, contrastText: '#fff' },
-      secondary: { main: c.secondary, contrastText: '#1A2E25' },
+      secondary: { main: c.secondary, contrastText: c.textPrimary },
       background: { default: c.background, paper: c.surface },
       text: { primary: c.textPrimary, secondary: c.textSecondary },
       success: { main: c.success },
