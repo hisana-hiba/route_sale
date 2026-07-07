@@ -1,0 +1,905 @@
+import { useState } from 'react'
+import {
+  Box, Button, Typography, TextField, MenuItem, Grid, Dialog, DialogTitle,
+  DialogContent, DialogActions, Chip, Alert, Tabs, Tab, Checkbox, FormControlLabel,
+  Table, TableBody, TableCell, TableHead, TableRow, IconButton, LinearProgress,
+} from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { apiCall } from '@/api/flowClient'
+import { createItem, fetchList, updateItem } from '@/api/client'
+import { shops, staff, products, appModules, leaveTypes } from '@/mocks/flowData'
+import { DataPanel } from '@/components/ui/DataPanel'
+import { StatusChip } from '@/components/ui/StatusChip'
+import { primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
+import { formatCurrency } from '@/utils/export'
+import { colors } from '@/theme/palette'
+import type { DocumentedFlow } from '@/types/module'
+import { ThemeSettingsPanel } from '@/components/settings/ThemeSettingsPanel'
+
+interface FlowPanelProps {
+  flow: DocumentedFlow
+}
+
+const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+export function DocumentedFlowPanel({ flow }: FlowPanelProps) {
+  switch (flow) {
+    case 'sales-return': return <SalesReturnPanel />
+    case 'e-way-bill': return <EWayBillPanel />
+    case 'theme-settings': return <ThemeSettingsPanel />
+    case 'multi-assign-route': return <MultiAssignRoutePanel />
+    case 'live-route': return <LiveRoutePanel />
+    case 'weekly-schedule': return <WeeklySchedulePanel />
+    case 'register-outlet': return <RegisterOutletPanel />
+    case 'employee-directory': return <EmployeeDirectoryPanel />
+    case 'attendance': return <AttendancePanel />
+    case 'leave-registry': return <LeaveRegistryPanel />
+    case 'payroll': return <PayrollPanel />
+    case 'roles-access': return <RolesAccessPanel />
+    case 'performance': return <PerformancePanel />
+    case 'product-catalog': return <ProductCatalogPanel />
+    case 'stock-allocation': return <StockAllocationPanel />
+    case 'stock-management': return <StockManagementPanel />
+    default: return null
+  }
+}
+
+function EWayBillPanel() {
+  const queryClient = useQueryClient()
+  const [msg, setMsg] = useState('')
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    vehicle: '', driver: '', customer: '', amount: 50000, distance: '50 km', date: new Date().toISOString().split('T')[0],
+  })
+
+  const { data, refetch } = useQuery({
+    queryKey: ['module', 'logistics-e-way-bills', 'ewb-panel'],
+    queryFn: () => fetchList<Record<string, unknown>>('/logistics-e-way-bills', { page: 1, pageSize: 50 }),
+  })
+
+  const bills = data?.data ?? []
+  const active = bills.filter((b) => b.status === 'active' || b.status === 'in_transit')
+  const expired = bills.filter((b) => b.status === 'expired' || b.status === 'cancelled')
+
+  const generate = useMutation({
+    mutationFn: () => createItem('/logistics-e-way-bills', {
+      ...form,
+      ewayBill: `EWB${Date.now().toString().slice(-12)}`,
+      status: 'active',
+    }),
+    onSuccess: () => {
+      setMsg('E-Way Bill generated successfully')
+      setOpen(false)
+      refetch()
+      queryClient.invalidateQueries({ queryKey: ['module', 'logistics-e-way-bills'] })
+    },
+  })
+
+  const updateStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      updateItem('/logistics-e-way-bills', id, { status }),
+    onSuccess: (_, v) => { setMsg(`EWB ${v.status}`); refetch(); queryClient.invalidateQueries({ queryKey: ['module', 'logistics-e-way-bills'] }) },
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+      <DataPanel title="E-Way Bills (EWB)" subtitle="Generate, extend, and cancel GST E-Way Bills for deliveries"
+        actions={
+          <Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>
+            Generate EWB
+          </Button>
+        }
+      >
+        {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Total EWBs', val: bills.length },
+            { label: 'Active', val: active.length },
+            { label: 'Expired / Cancelled', val: expired.length },
+            { label: 'Total Value', val: formatCurrency(bills.reduce((s, b) => s + (Number(b.amount) || 0), 0)) },
+          ].map((k) => (
+            <Box key={k.label} sx={{ ...whiteCardSx, px: 2.5, py: 1.5, minWidth: 120 }}>
+              <Typography variant="caption" color="text.secondary">{k.label}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>{k.val}</Typography>
+            </Box>
+          ))}
+        </Box>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>EWB Number</TableCell>
+              <TableCell>Vehicle</TableCell>
+              <TableCell>Consignee</TableCell>
+              <TableCell>Value</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {bills.slice(0, 8).map((b) => (
+              <TableRow key={String(b.id)}>
+                <TableCell>{String(b.ewayBill ?? b.code)}</TableCell>
+                <TableCell>{String(b.vehicle)}</TableCell>
+                <TableCell>{String(b.customer)}</TableCell>
+                <TableCell>{formatCurrency(Number(b.amount) || 0)}</TableCell>
+                <TableCell><StatusChip status={String(b.status)} /></TableCell>
+                <TableCell align="right">
+                  {b.status === 'active' && (
+                    <>
+                      <Button size="small" onClick={() => updateStatus.mutate({ id: String(b.id), status: 'in_transit' })}>Extend</Button>
+                      <Button size="small" color="error" onClick={() => updateStatus.mutate({ id: String(b.id), status: 'cancelled' })}>Cancel</Button>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataPanel>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Generate E-Way Bill</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField label="Vehicle No." value={form.vehicle} onChange={(e) => setForm((p) => ({ ...p, vehicle: e.target.value }))} required />
+          <TextField label="Driver" value={form.driver} onChange={(e) => setForm((p) => ({ ...p, driver: e.target.value }))} required />
+          <TextField label="Consignee" value={form.customer} onChange={(e) => setForm((p) => ({ ...p, customer: e.target.value }))} required />
+          <TextField label="Invoice Value (₹)" type="number" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: Number(e.target.value) }))} />
+          <TextField label="Distance" value={form.distance} onChange={(e) => setForm((p) => ({ ...p, distance: e.target.value }))} />
+          <TextField label="Valid From" type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" sx={primaryButtonSx} disabled={!form.vehicle || !form.driver || !form.customer} onClick={() => generate.mutate()}>
+            Generate EWB
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  )
+}
+
+function SalesReturnPanel() {
+  const navigate = useNavigate()
+  const [msg, setMsg] = useState('')
+
+  const { data: returns = [], refetch } = useQuery({
+    queryKey: ['returns'],
+    queryFn: () => apiCall<Record<string, unknown>[]>('/returns'),
+  })
+
+  const review = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiCall(`/returns/${id}`, { method: 'PATCH', body: { status } }),
+    onSuccess: (_, v) => { setMsg(`Return ${v.status}`); refetch() },
+  })
+
+  const pending = returns.filter((r) => r.status === 'pending')
+  const approved = returns.filter((r) => r.status === 'approved' || r.status === 'credited')
+
+  return (
+    <Box sx={{ mb: 2 }}>
+      <DataPanel title="Sales Returns" subtitle="Create & approve customer returns — sales/returns flow"
+        actions={
+          <Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => navigate('/sales/sales-return/new')}>
+            New Return
+          </Button>
+        }
+      >
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Total', val: returns.length },
+            { label: 'Pending', val: pending.length },
+            { label: 'Approved', val: approved.length },
+            { label: 'Rejected', val: returns.filter((r) => r.status === 'rejected').length },
+          ].map((t) => (
+            <Box key={t.label} sx={{ ...whiteCardSx, px: 2, py: 1, minWidth: 90, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">{t.label}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>{t.val}</Typography>
+            </Box>
+          ))}
+        </Box>
+        {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+        {returns.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">No returns yet. Click &quot;New Return&quot; to create one.</Typography>
+        ) : returns.map((r) => (
+          <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, borderBottom: `1px solid ${colors.border}` }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 600 }}>{String(r.code)} — {String(r.customer)}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {String(r.orderRef ?? 'No order link')} · {formatCurrency(Number(r.amount))} · {String(r.reason)}
+              </Typography>
+            </Box>
+            <StatusChip status={String(r.status)} />
+            {r.status === 'pending' && (
+              <>
+                <Button size="small" color="success" onClick={() => review.mutate({ id: String(r.id), status: 'approved' })}>Approve</Button>
+                <Button size="small" color="error" onClick={() => review.mutate({ id: String(r.id), status: 'rejected' })}>Reject</Button>
+              </>
+            )}
+            {r.status === 'approved' && (
+              <Button size="small" variant="outlined" onClick={() => review.mutate({ id: String(r.id), status: 'credited' })}>Mark Credited</Button>
+            )}
+          </Box>
+        ))}
+      </DataPanel>
+    </Box>
+  )
+}
+
+function MultiAssignRoutePanel() {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [routeName, setRouteName] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([])
+  const [selectedShops, setSelectedShops] = useState<string[]>([])
+  const [msg, setMsg] = useState('')
+
+  const { data: assignments = [], refetch } = useQuery({
+    queryKey: ['route-assignments'],
+    queryFn: () => apiCall<Record<string, unknown>[]>('/route-assignments'),
+  })
+
+  const save = useMutation({
+    mutationFn: () => apiCall('/route-assignments', {
+      method: 'POST',
+      body: { routeName, date, userIds: selectedStaff, shopIds: selectedShops },
+    }),
+    onSuccess: () => {
+      setMsg(`Created ${selectedStaff.length} assignment(s) for ${routeName}`)
+      setOpen(false)
+      refetch()
+      qc.invalidateQueries({ queryKey: ['module'] })
+    },
+  })
+
+  const toggle = (id: string, list: string[], set: (v: string[]) => void) => {
+    set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
+  }
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Multi-Assign Route" subtitle="Assign one route to multiple staff — Flow 3.2">
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Total', val: assignments.length },
+          { label: 'Active', val: assignments.filter((a) => a.status === 'active').length },
+          { label: 'Pending', val: assignments.filter((a) => a.status === 'pending').length },
+          { label: 'Done', val: assignments.filter((a) => a.status === 'completed').length },
+        ].map((t) => (
+          <Box key={t.label} sx={{ ...whiteCardSx, px: 2, py: 1, minWidth: 90, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.secondary">{t.label}</Typography>
+            <Typography sx={{ fontWeight: 800 }}>{t.val}</Typography>
+          </Box>
+        ))}
+        <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>
+          Multi-Assign
+        </Button>
+      </Box>
+      {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Multi-Assign Route</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField label="Route Name" value={routeName} onChange={(e) => setRouteName(e.target.value)} required />
+          <TextField label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <Typography variant="subtitle2">Select Staff (multiple)</Typography>
+          {staff.map((s) => (
+            <FormControlLabel key={s.id} control={<Checkbox checked={selectedStaff.includes(s.id)} onChange={() => toggle(s.id, selectedStaff, setSelectedStaff)} />} label={`${s.name} (${s.role})`} />
+          ))}
+          <Typography variant="subtitle2">Select Outlets (multiple)</Typography>
+          {shops.map((s) => (
+            <FormControlLabel key={s.id} control={<Checkbox checked={selectedShops.includes(s.id)} onChange={() => toggle(s.id, selectedShops, setSelectedShops)} />} label={s.name} />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" sx={primaryButtonSx} disabled={!routeName || !selectedStaff.length || !selectedShops.length} onClick={() => save.mutate()}>Save Assignments</Button>
+        </DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function LiveRoutePanel() {
+  const [filter, setFilter] = useState('all')
+  const [msg, setMsg] = useState('')
+
+  const { data, refetch } = useQuery({
+    queryKey: ['routes-today'],
+    queryFn: () => apiCall<{ shops: { shopId: string; shopName: string; visitStatus: string; order: number }[] }>('/routes/today'),
+  })
+
+  const markVisit = useMutation({
+    mutationFn: ({ shopId, status }: { shopId: string; status: string }) =>
+      apiCall(`/routes/shops/${shopId}/visit`, { method: 'PATCH', body: { status } }),
+    onSuccess: (_, v) => { setMsg(`Marked ${v.status}`); refetch() },
+  })
+
+  const shopsList = (data?.shops ?? []).filter((s) =>
+    filter === 'all' || s.visitStatus.toLowerCase() === filter)
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Today's Route" subtitle="Mark visits — Flow 3.3">
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        {['all', 'visited', 'pending', 'skipped'].map((f) => (
+          <Chip key={f} label={f} onClick={() => setFilter(f)} color={filter === f ? 'primary' : 'default'} variant={filter === f ? 'filled' : 'outlined'} sx={{ textTransform: 'capitalize' }} />
+        ))}
+      </Box>
+      {msg && <Alert severity="info" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      {shopsList.map((s) => (
+        <Box key={s.shopId} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, borderBottom: `1px solid ${colors.border}` }}>
+          <Typography variant="body2" sx={{ width: 24 }}>{s.order}</Typography>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 600 }}>{s.shopName}</Typography>
+            <StatusChip status={s.visitStatus.toLowerCase()} />
+          </Box>
+          {s.visitStatus === 'Pending' && (
+            <>
+              <Button size="small" variant="outlined" color="success" startIcon={<CheckIcon />} onClick={() => markVisit.mutate({ shopId: s.shopId, status: 'Visited' })}>Visited</Button>
+              <Button size="small" variant="outlined" color="warning" onClick={() => markVisit.mutate({ shopId: s.shopId, status: 'Skipped' })}>Skip</Button>
+            </>
+          )}
+        </Box>
+      ))}
+    </DataPanel>
+    </Box>
+  )
+}
+
+function WeeklySchedulePanel() {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [dayOfWeek, setDayOfWeek] = useState(1)
+  const [routeName, setRouteName] = useState('')
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([])
+  const [selectedShops, setSelectedShops] = useState<string[]>([])
+  const [msg, setMsg] = useState('')
+
+  const { data: schedules = [], refetch } = useQuery({
+    queryKey: ['weekly-schedule'],
+    queryFn: () => apiCall<Record<string, unknown>[]>('/routes/weekly-schedule'),
+  })
+
+  const save = useMutation({
+    mutationFn: () => apiCall('/routes/weekly-schedule', {
+      method: 'POST',
+      body: { dayOfWeek, dayName: days[dayOfWeek - 1], routeName, userIds: selectedStaff, shopIds: selectedShops },
+    }),
+    onSuccess: () => { setOpen(false); refetch(); setMsg('Schedule saved') },
+  })
+
+  const generate = useMutation({
+    mutationFn: () => apiCall<{ generated: number }>('/routes/weekly-schedule/generate-today', { method: 'POST' }),
+    onSuccess: (d) => { setMsg(`Generated ${d.generated} daily assignment(s) from today's template`); qc.invalidateQueries({ queryKey: ['route-assignments'] }) },
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => apiCall(`/routes/weekly-schedule/${id}`, { method: 'DELETE' }),
+    onSuccess: () => refetch(),
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Weekly Schedule" subtitle="Mon–Sun route templates — Flow 3.4"
+      actions={<Button variant="contained" color="primary" size="small" startIcon={<PlayArrowIcon />} sx={primaryButtonSx} onClick={() => generate.mutate()}>Generate Today</Button>}
+    >
+      {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      <Grid container spacing={1.5}>
+        {days.map((day, i) => {
+          const daySchedules = schedules.filter((s) => s.dayOfWeek === i + 1)
+          return (
+            <Grid key={day} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <Box sx={{ ...whiteCardSx, p: 2, minHeight: 120 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>{day}</Typography>
+                {daySchedules.length === 0 ? (
+                  <Button size="small" sx={{ mt: 1 }} onClick={() => { setDayOfWeek(i + 1); setOpen(true) }}>Add Schedule</Button>
+                ) : daySchedules.map((s) => (
+                  <Box key={String(s.id)} sx={{ mt: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{String(s.routeName)}</Typography>
+                    <Typography variant="caption" color="text.secondary">{String((s.userNames as string[])?.join(', '))}</Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <IconButton size="small" onClick={() => { setDayOfWeek(i + 1); setRouteName(String(s.routeName)); setOpen(true) }}><AddIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" color="error" onClick={() => remove.mutate(String(s.id))}><CloseIcon fontSize="small" /></IconButton>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
+          )
+        })}
+      </Grid>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Add Schedule — {days[dayOfWeek - 1]}</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 2 }}>
+          <TextField label="Route Name" value={routeName} onChange={(e) => setRouteName(e.target.value)} />
+          {staff.map((s) => (
+            <FormControlLabel key={s.id} control={<Checkbox checked={selectedStaff.includes(s.id)} onChange={() => setSelectedStaff((p) => p.includes(s.id) ? p.filter((x) => x !== s.id) : [...p, s.id])} />} label={s.name} />
+          ))}
+          {shops.map((s) => (
+            <FormControlLabel key={s.id} control={<Checkbox checked={selectedShops.includes(s.id)} onChange={() => setSelectedShops((p) => p.includes(s.id) ? p.filter((x) => x !== s.id) : [...p, s.id])} />} label={s.name} />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => save.mutate()}>Save</Button>
+        </DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function RegisterOutletPanel() {
+  const [tab, setTab] = useState(0)
+  const [msg, setMsg] = useState('')
+  const [form, setForm] = useState({ shopName: '', ownerName: '', mobile: '', address: '', category: 'Retail', lat: '28.6139', lng: '77.2090', gstin: '', creditLimit: '', notes: '' })
+
+  const { data: requests = [], refetch } = useQuery({
+    queryKey: ['shop-requests'],
+    queryFn: () => apiCall<Record<string, unknown>[]>('/shop-requests'),
+  })
+
+  const submit = useMutation({
+    mutationFn: () => apiCall('/shop-requests', { method: 'POST', body: form }),
+    onSuccess: () => { setMsg('Outlet registration submitted — pending approval'); setTab(1); refetch() },
+  })
+
+  const review = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiCall(`/shop-requests/${id}`, { method: 'PATCH', body: { status } }),
+    onSuccess: () => refetch(),
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Register Outlet" subtitle="Submit & approve shop requests — Flow 3.5">
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+        <Tab label="Register New" />
+        <Tab label={`Pending Requests (${requests.filter((r) => r.status === 'pending').length})`} />
+      </Tabs>
+      {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
+      {tab === 0 && (
+        <Grid container spacing={2}>
+          {(['shopName', 'ownerName', 'mobile', 'address', 'category', 'gstin', 'notes'] as const).map((f) => (
+            <Grid key={f} size={{ xs: 12, sm: 6 }}>
+              <TextField fullWidth size="small" label={f.replace(/([A-Z])/g, ' $1')} value={form[f]} onChange={(e) => setForm((p) => ({ ...p, [f]: e.target.value }))} required={['shopName', 'ownerName', 'mobile', 'address', 'category'].includes(f)} />
+            </Grid>
+          ))}
+          <Grid size={{ xs: 6 }}><TextField fullWidth size="small" label="GPS Lat" value={form.lat} onChange={(e) => setForm((p) => ({ ...p, lat: e.target.value }))} /></Grid>
+          <Grid size={{ xs: 6 }}><TextField fullWidth size="small" label="GPS Lng" value={form.lng} onChange={(e) => setForm((p) => ({ ...p, lng: e.target.value }))} /></Grid>
+          <Grid size={{ xs: 12 }}>
+            <Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => submit.mutate()}>Submit for Approval</Button>
+          </Grid>
+        </Grid>
+      )}
+      {tab === 1 && requests.map((r) => (
+        <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, borderBottom: `1px solid ${colors.border}` }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 600 }}>{String(r.shopName)}</Typography>
+            <Typography variant="caption">{String(r.ownerName)} — {String(r.mobile)}</Typography>
+          </Box>
+          <StatusChip status={String(r.status)} />
+          {r.status === 'pending' && (
+            <>
+              <Button size="small" color="success" onClick={() => review.mutate({ id: String(r.id), status: 'approved' })}>Approve</Button>
+              <Button size="small" color="error" onClick={() => review.mutate({ id: String(r.id), status: 'rejected' })}>Reject</Button>
+            </>
+          )}
+        </Box>
+      ))}
+    </DataPanel>
+    </Box>
+  )
+}
+
+function EmployeeDirectoryPanel() {
+  const { data: employees = [], refetch } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => apiCall<Record<string, unknown>[]>('/users'),
+  })
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', department: 'Field', role: 'salesman' })
+
+  const add = () => {
+    employees.unshift({ id: `u-${Date.now()}`, ...form, status: 'active' })
+    setOpen(false)
+    refetch()
+  }
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Employee Directory" subtitle="Admin employee management — Flow 3.6"
+      actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>Add Employee</Button>}
+    >
+      <Table size="small">
+        <TableHead><TableRow><TableCell>Name</TableCell><TableCell>Department</TableCell><TableCell>Role</TableCell><TableCell>Status</TableCell></TableRow></TableHead>
+        <TableBody>
+          {employees.map((e) => (
+            <TableRow key={String(e.id)}><TableCell>{String(e.name)}</TableCell><TableCell>{String(e.department)}</TableCell><TableCell>{String(e.role)}</TableCell><TableCell><StatusChip status={String(e.status)} /></TableCell></TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Add Employee</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField label="Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+          <TextField label="Department" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} />
+          <TextField select label="Role" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>
+            {['salesman', 'deliveryAgent', 'manager', 'admin'].map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+          </TextField>
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={add}>Save</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function AttendancePanel() {
+  const [msg, setMsg] = useState('')
+  const { data: today, refetch } = useQuery({
+    queryKey: ['attendance-today'],
+    queryFn: () => apiCall<Record<string, Record<string, unknown>>>('/attendance/today'),
+  })
+  const current = today?.current
+
+  const checkIn = useMutation({
+    mutationFn: () => apiCall('/attendance/check-in', { method: 'POST', body: { lat: 28.6139, lng: 77.209, address: 'Field HQ' } }),
+    onSuccess: () => { setMsg('Checked in — GPS tracking started'); refetch() },
+  })
+  const checkOut = useMutation({
+    mutationFn: () => apiCall('/attendance/check-out', { method: 'POST' }),
+    onSuccess: () => { setMsg('Checked out — tracking stopped'); refetch() },
+  })
+  const recordBreak = useMutation({
+    mutationFn: () => apiCall('/attendance/break', { method: 'POST', body: { minutes: 15 } }),
+    onSuccess: () => { setMsg('Break recorded (15 min)'); refetch() },
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Daily Attendance" subtitle="Check in/out with GPS — Flow 3.7">
+      {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        {!current?.checkIn ? (
+          <Button variant="contained" color="success" onClick={() => checkIn.mutate()}>Check In + GPS</Button>
+        ) : !current?.checkOut ? (
+          <>
+            <Chip label={`Checked in: ${new Date(String(current.checkIn)).toLocaleTimeString()}`} color="success" />
+            <Button variant="outlined" onClick={() => recordBreak.mutate()}>Record Break</Button>
+            <Button variant="contained" color="error" onClick={() => checkOut.mutate()}>Check Out</Button>
+          </>
+        ) : (
+          <Chip label="Day completed" color="default" />
+        )}
+      </Box>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function LeaveRegistryPanel() {
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ type: 'Casual', fromDate: '', toDate: '', reason: '' })
+  const { data: leaves = [], refetch } = useQuery({ queryKey: ['leave'], queryFn: () => apiCall<Record<string, unknown>[]>('/leave') })
+
+  const apply = useMutation({
+    mutationFn: () => apiCall('/leave', { method: 'POST', body: form }),
+    onSuccess: () => { setOpen(false); refetch() },
+  })
+  const review = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => apiCall(`/leave/${id}`, { method: 'PATCH', body: { status } }),
+    onSuccess: () => refetch(),
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Leave Registry" subtitle="Apply & approve leave — Flow 3.8"
+      actions={<Button size="small" variant="contained" color="primary" sx={primaryButtonSx} onClick={() => setOpen(true)}>Apply Leave</Button>}
+    >
+      {leaves.map((l) => (
+        <Box key={String(l.id)} sx={{ display: 'flex', gap: 2, py: 1.5, borderBottom: `1px solid ${colors.border}`, alignItems: 'center' }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 600 }}>{String(l.type)} — {String(l.fromDate)} to {String(l.toDate)}</Typography>
+            <Typography variant="caption">{String(l.reason)}</Typography>
+          </Box>
+          <StatusChip status={String(l.status)} />
+          {l.status === 'pending' && (
+            <>
+              <Button size="small" color="success" onClick={() => review.mutate({ id: String(l.id), status: 'approved' })}>Approve</Button>
+              <Button size="small" color="error" onClick={() => review.mutate({ id: String(l.id), status: 'rejected' })}>Reject</Button>
+            </>
+          )}
+        </Box>
+      ))}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Apply Leave</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField select label="Type" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+            {leaveTypes.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+          </TextField>
+          <TextField label="From" type="date" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField label="To" type="date" value={form.toDate} onChange={(e) => setForm((p) => ({ ...p, toDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField label="Reason" multiline rows={2} value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} />
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => apply.mutate()}>Submit</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function PayrollPanel() {
+  const { data: payslips = [] } = useQuery({ queryKey: ['payslips'], queryFn: () => apiCall<Record<string, unknown>[]>('/payroll/payslips') })
+  const [selected, setSelected] = useState<Record<string, unknown> | null>(null)
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Payroll Management" subtitle="View payslips — Flow 3.9">
+      <Table size="small">
+        <TableHead><TableRow><TableCell>Employee</TableCell><TableCell>Month</TableCell><TableCell align="right">Net Pay</TableCell><TableCell>Action</TableCell></TableRow></TableHead>
+        <TableBody>
+          {payslips.map((p) => (
+            <TableRow key={String(p.id)}>
+              <TableCell>{String(p.employeeName)}</TableCell>
+              <TableCell>{String(p.month)}</TableCell>
+              <TableCell align="right">{formatCurrency(Number(p.netPay))}</TableCell>
+              <TableCell><Button size="small" onClick={() => setSelected(p)}>View</Button></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Payslip — {String(selected?.employeeName)}</DialogTitle>
+        <DialogContent>
+          {selected && ['basic', 'hra', 'incentives', 'deductions', 'netPay'].map((k) => (
+            <Box key={k} sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
+              <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{k}</Typography>
+              <Typography sx={{ fontWeight: 600 }}>{formatCurrency(Number(selected[k]))}</Typography>
+            </Box>
+          ))}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setSelected(null)}>Close</Button><Button variant="outlined" onClick={() => window.print()}>Download PDF</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function RolesAccessPanel() {
+  const [role, setRole] = useState('salesman')
+  const [msg, setMsg] = useState('')
+  const { data: permissions = {}, refetch } = useQuery({
+    queryKey: ['permissions'],
+    queryFn: () => apiCall<Record<string, string[]>>('/admin/permissions'),
+  })
+  const [selected, setSelected] = useState<string[]>(permissions[role] ?? [])
+
+  const save = useMutation({
+    mutationFn: () => apiCall(`/admin/permissions/${role}`, { method: 'PUT', body: selected }),
+    onSuccess: () => { setMsg('Permissions saved'); refetch() },
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Roles & Access Controller" subtitle="Toggle module permissions — Flow 3.10">
+      {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      <TextField select size="small" value={role} onChange={(e) => { setRole(e.target.value); setSelected(permissions[e.target.value] ?? []) }} sx={{ mb: 2, minWidth: 180 }}>
+        {Object.keys(permissions).map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+      </TextField>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {appModules.map((m) => (
+          <Chip key={m} label={m} color={selected.includes(m) ? 'primary' : 'default'} variant={selected.includes(m) ? 'filled' : 'outlined'}
+            onClick={() => setSelected((p) => p.includes(m) ? p.filter((x) => x !== m) : [...p, m])} />
+        ))}
+      </Box>
+      <Button variant="contained" color="primary" sx={{ ...primaryButtonSx, mt: 2 }} onClick={() => save.mutate()}>Save Permissions</Button>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function PerformancePanel() {
+  const [period, setPeriod] = useState('month')
+  const { data } = useQuery({ queryKey: ['performance'], queryFn: () => apiCall<Record<string, unknown>>('/users/me/performance') })
+
+  if (!data) return null
+  const leaderboard = (data.leaderboard as { name: string; sales: number; visits: number; orders: number; rank: number }[]) ?? []
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Performance Indicators" subtitle="Team KPIs & leaderboard — Flow 3.11">
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        {['week', 'month', 'quarter'].map((p) => (
+          <Chip key={p} label={`This ${p}`} onClick={() => setPeriod(p)} color={period === p ? 'primary' : 'default'} sx={{ textTransform: 'capitalize' }} />
+        ))}
+      </Box>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {[
+          { label: 'Team Sales', val: formatCurrency(Number(data.teamSales)) },
+          { label: 'Total Orders', val: String(data.totalOrders) },
+          { label: 'Target %', val: `${data.targetAchievement}%` },
+          { label: 'Attendance', val: `${data.attendanceRate}%` },
+        ].map((k) => (
+          <Grid key={k.label} size={{ xs: 6, md: 3 }}>
+            <Box sx={{ ...whiteCardSx, p: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">{k.label}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>{k.val}</Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+      <Typography variant="subtitle2" gutterBottom>Leaderboard</Typography>
+      {leaderboard.map((e) => (
+        <Box key={e.name} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1, borderBottom: `1px solid ${colors.border}` }}>
+          <Chip label={`#${e.rank}`} size="small" color="primary" />
+          <Typography sx={{ flex: 1, fontWeight: 600 }}>{e.name}</Typography>
+          <Typography variant="body2">{formatCurrency(e.sales)}</Typography>
+          <Typography variant="caption" color="text.secondary">{e.orders} orders</Typography>
+        </Box>
+      ))}
+    </DataPanel>
+    </Box>
+  )
+}
+
+function ProductCatalogPanel() {
+  const { data: catalog = [], refetch } = useQuery({ queryKey: ['products'], queryFn: () => apiCall<typeof products>('/products') })
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
+
+  const save = () => {
+    catalog.push({ id: `p-${Date.now()}`, ...form })
+    setOpen(false)
+    refetch()
+  }
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Product Catalog" subtitle="CRUD with GST/HSN — Flow 3.12"
+      actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>Add Product</Button>}
+    >
+      <Grid container spacing={1.5}>
+        {catalog.map((p) => (
+          <Grid key={p.id} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Box sx={{ ...whiteCardSx, p: 2 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>{p.name}</Typography>
+              <Typography variant="caption" color="text.secondary">{p.category} · HSN {p.hsn}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>{formatCurrency(p.price)} · GST {p.gstRate}%</Typography>
+              <LinearProgress variant="determinate" value={Math.min(p.stockQty / 5, 100)} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
+              <Typography variant="caption">Stock: {p.stockQty}</Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Add Product</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField label="Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+          <TextField label="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
+          <TextField label="Price" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))} />
+          <TextField label="GST %" type="number" value={form.gstRate} onChange={(e) => setForm((p) => ({ ...p, gstRate: Number(e.target.value) }))} />
+          <TextField label="HSN" value={form.hsn} onChange={(e) => setForm((p) => ({ ...p, hsn: e.target.value }))} />
+          <TextField label="Stock Qty" type="number" value={form.stockQty} onChange={(e) => setForm((p) => ({ ...p, stockQty: Number(e.target.value) }))} />
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={save}>Save</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function StockAllocationPanel() {
+  const { data: allocations = [], refetch } = useQuery({ queryKey: ['stock-allocations'], queryFn: () => apiCall<Record<string, unknown>[]>('/stock/allocations') })
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ agent: staff[1].name, product: products[1].name, qty: 50, orderRef: 'ORD-1045' })
+
+  const create = useMutation({
+    mutationFn: () => apiCall('/stock/allocations', { method: 'POST', body: form }),
+    onSuccess: () => { setOpen(false); refetch() },
+  })
+  const receive = useMutation({
+    mutationFn: (id: string) => apiCall(`/stock/allocations/${id}/delivery`, { method: 'PATCH' }),
+    onSuccess: () => refetch(),
+  })
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Stock Allocation" subtitle="Allocate from confirmed orders — Flow 3.13"
+      actions={<Button size="small" variant="contained" color="primary" sx={primaryButtonSx} onClick={() => setOpen(true)}>Allocate Stock</Button>}
+    >
+      {allocations.map((a) => (
+        <Box key={String(a.id)} sx={{ display: 'flex', gap: 2, py: 1.5, borderBottom: `1px solid ${colors.border}`, alignItems: 'center' }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 600 }}>{String(a.product)} → {String(a.agent)}</Typography>
+            <Typography variant="caption">Qty: {String(a.qty)} · Ref: {String(a.orderRef)}</Typography>
+          </Box>
+          <StatusChip status={String(a.status)} />
+          {a.status === 'pending' && <Button size="small" color="success" onClick={() => receive.mutate(String(a.id))}>Mark Received</Button>}
+        </Box>
+      ))}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Create Allocation</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField select label="Agent" value={form.agent} onChange={(e) => setForm((p) => ({ ...p, agent: e.target.value }))}>
+            {staff.map((s) => <MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>)}
+          </TextField>
+          <TextField select label="Product" value={form.product} onChange={(e) => setForm((p) => ({ ...p, product: e.target.value }))}>
+            {products.map((p) => <MenuItem key={p.id} value={p.name}>{p.name}</MenuItem>)}
+          </TextField>
+          <TextField label="Quantity" type="number" value={form.qty} onChange={(e) => setForm((p) => ({ ...p, qty: Number(e.target.value) }))} />
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => create.mutate()}>Allocate</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}
+
+function StockManagementPanel() {
+  const [msg, setMsg] = useState('')
+  const { data, refetch } = useQuery({ queryKey: ['stock-overview'], queryFn: () => apiCall<Record<string, unknown>>('/stock/overview') })
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ type: 'in', product: products[0].name, qty: 100, ref: '' })
+
+  const record = useMutation({
+    mutationFn: () => apiCall('/stock/movements', { method: 'POST', body: form }),
+    onSuccess: () => { setOpen(false); setMsg('Stock movement recorded'); refetch() },
+  })
+
+  if (!data) return null
+  const movements = (data.movements as Record<string, unknown>[]) ?? []
+
+  return (
+    <Box sx={{ mb: 2 }}>
+    <DataPanel title="Stock Management" subtitle="Warehouse overview & movements — Flow 3.14"
+      actions={<Button size="small" variant="contained" color="primary" sx={primaryButtonSx} onClick={() => setOpen(true)}>Record Movement</Button>}
+    >
+      {msg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMsg('')}>{msg}</Alert>}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {[
+          { label: 'Total SKUs', val: String(data.totalSkus ?? '—') },
+          { label: 'Warehouse Value', val: formatCurrency(Number(data.warehouseValue)) },
+          { label: 'Low Stock', val: String(data.lowStockCount ?? '—') },
+          { label: 'Net Movement', val: String(data.netMovement ?? '—') },
+        ].map((k) => (
+          <Grid key={k.label} size={{ xs: 6, md: 3 }}>
+            <Box sx={{ ...whiteCardSx, p: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">{k.label}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>{k.val}</Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+      <Typography variant="subtitle2" gutterBottom>Recent Movements</Typography>
+      {movements.map((m) => (
+        <Box key={String(m.id)} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: `1px solid ${colors.border}` }}>
+          <Typography variant="body2">{String(m.type).toUpperCase()} — {String(m.product)}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{String(m.qty)} units</Typography>
+        </Box>
+      ))}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Record Stock Movement</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField select label="Type" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+            <MenuItem value="in">Stock In</MenuItem>
+            <MenuItem value="out">Stock Out</MenuItem>
+          </TextField>
+          <TextField select label="Product" value={form.product} onChange={(e) => setForm((p) => ({ ...p, product: e.target.value }))}>
+            {products.map((p) => <MenuItem key={p.id} value={p.name}>{p.name}</MenuItem>)}
+          </TextField>
+          <TextField label="Quantity" type="number" value={form.qty} onChange={(e) => setForm((p) => ({ ...p, qty: Number(e.target.value) }))} />
+          <TextField label="Reference" value={form.ref} onChange={(e) => setForm((p) => ({ ...p, ref: e.target.value }))} />
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => record.mutate()}>Save</Button></DialogActions>
+      </Dialog>
+    </DataPanel>
+    </Box>
+  )
+}

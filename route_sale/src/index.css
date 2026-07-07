@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+
+:root {
+  --rs-primary: #1A2E25;
+  --rs-primary-light: #2D4A3E;
+  --rs-primary-dark: #0F1A15;
+  --rs-secondary: #D4A745;
+  --rs-background: #F9F8F3;
+  --rs-surface: #FFFFFF;
+  --rs-surface-elevated: #FFFFFF;
+  --rs-text-primary: #111827;
+  --rs-text-secondary: #6B7280;
+  --rs-text-muted: #9CA3AF;
+  --rs-border: rgba(17, 24, 39, 0.08);
+  --rs-border-strong: rgba(17, 24, 39, 0.14);
+  --rs-success: #16A34A;
+  --rs-success-soft: rgba(22, 163, 74, 0.12);
+  --rs-warning: #EA580C;
+  --rs-warning-soft: rgba(234, 88, 12, 0.12);
+  --rs-error: #DC2626;
+  --rs-error-soft: rgba(220, 38, 38, 0.12);
+  --rs-info: #2563EB;
+  --rs-info-soft: rgba(37, 99, 235, 0.12);
+  --rs-coral: #E07A5F;
+  --rs-coral-soft: rgba(224, 122, 95, 0.14);
+  --rs-sidebar: #1A2E25;
+  --rs-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --rs-sidebar-active: rgba(212, 167, 69, 0.88);
+  --rs-action: #111827;
+  --rs-gradient-primary: linear-gradient(180deg, #243D32 0%, #1A2E25 50%, #152620 100%);
+  --rs-gradient-accent: linear-gradient(135deg, #1A2E25 0%, #D4A745 100%);
+  --rs-gradient-soft: linear-gradient(180deg, rgba(26, 46, 37, 0.04) 0%, transparent 100%);
+  --rs-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.04), 0 2px 8px rgba(17, 24, 39, 0.04);
+  --rs-shadow-md: 0 2px 8px rgba(17, 24, 39, 0.06), 0 8px 24px rgba(17, 24, 39, 0.06);
+  --rs-shadow-lg: 0 4px 16px rgba(17, 24, 39, 0.08), 0 16px 48px rgba(17, 24, 39, 0.08);
+}
+
+*,
+
+*::before,
+*::after {
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--rs-background);
+}
+
+.dashboard-leaf-bg {
+  position: relative;
+}
+
+.dashboard-leaf-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    radial-gradient(ellipse 120px 80px at 92% 8%, color-mix(in srgb, var(--rs-primary) 6%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 100px 70px at 4% 45%, color-mix(in srgb, var(--rs-secondary) 8%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 90px 60px at 78% 88%, color-mix(in srgb, var(--rs-primary) 5%, transparent) 0%, transparent 70%);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* AG Grid — fully theme-aware (overrides ag-theme-quartz defaults loaded earlier) */
+.route-sale-grid.ag-theme-quartz,
+.route-sale-grid.ag-theme-quartz-dark,
+.route-sale-grid .ag-theme-quartz,
+.route-sale-grid .ag-theme-quartz-dark,
+.route-sale-grid [class*='ag-theme-'] {
+  --ag-active-color: var(--rs-primary);
+  --ag-background-color: var(--rs-surface);
+  --ag-wrapper-background-color: var(--rs-surface);
+  --ag-data-background-color: var(--rs-surface);
+  --ag-foreground-color: var(--rs-text-primary);
+  --ag-secondary-foreground-color: var(--rs-text-secondary);
+  --ag-border-color: var(--rs-border);
+  --ag-secondary-border-color: var(--rs-border);
+  --ag-header-background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface));
+  --ag-header-foreground-color: var(--rs-text-secondary);
+  --ag-odd-row-background-color: color-mix(in srgb, var(--rs-primary) 2%, var(--rs-surface));
+  --ag-row-hover-color: color-mix(in srgb, var(--rs-primary) 6%, var(--rs-surface));
+  --ag-selected-row-background-color: color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface));
+  --ag-chrome-background-color: var(--rs-surface);
+  --ag-control-panel-background-color: var(--rs-surface);
+  --ag-subheader-background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface));
+  --ag-panel-background-color: var(--rs-surface);
+  --ag-menu-background-color: var(--rs-surface);
+  --ag-tooltip-background-color: var(--rs-surface);
+  --ag-checkbox-background-color: var(--rs-surface);
+  --ag-checkbox-checked-color: var(--rs-primary);
+  --ag-input-focus-border-color: var(--rs-primary);
+  --ag-range-selection-border-color: var(--rs-primary);
+  --ag-icon-font-color: var(--rs-text-secondary);
+  --ag-font-family: 'Inter', system-ui, sans-serif;
+  --ag-font-size: 13px;
+  --ag-cell-horizontal-padding: 16px;
+  --ag-row-height: 52px;
+  --ag-header-height: 48px;
+  --ag-border-radius: 0;
+}
+
+.route-sale-grid .ag-root-wrapper,
+.route-sale-grid .ag-header,
+.route-sale-grid .ag-body-viewport,
+.route-sale-grid .ag-center-cols-viewport,
+.route-sale-grid .ag-center-cols-container {
+  background-color: var(--rs-surface) !important;
+  color: var(--rs-text-primary);
+}
+
+.route-sale-grid .ag-header {
+  background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface)) !important;
+  border-bottom: 1px solid var(--rs-border);
+}
+
+.route-sale-grid .ag-header-cell,
+.route-sale-grid .ag-cell {
+  color: var(--rs-text-primary);
+}
+
+.route-sale-grid .ag-row {
+  border-bottom: 1px solid var(--rs-border);
+  background-color: var(--rs-surface);
+  color: var(--rs-text-primary);
+}
+
+.route-sale-grid .ag-row-odd {
+  background-color: color-mix(in srgb, var(--rs-primary) 2%, var(--rs-surface));
+}
+
+.route-sale-grid .ag-row-hover:not(.ag-full-width-row)::before {
+  background-color: color-mix(in srgb, var(--rs-primary) 6%, var(--rs-surface));
+}
+
+.route-sale-grid .ag-overlay-loading-wrapper,
+.route-sale-grid .ag-overlay-no-rows-wrapper {
+  background-color: color-mix(in srgb, var(--rs-surface) 92%, transparent);
+  color: var(--rs-text-secondary);
+}
+
+.route-sale-grid .ag-header-cell-label {
+  font-weight: 700;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rs-text-secondary);
+}
+
+.route-sale-grid .ag-root-wrapper {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Pagination active page */
+.MuiTablePagination-root .Mui-selected {
+  background-color: var(--rs-primary) !important;
+  color: #fff !important;
+}
+
+@media print {
+  nav,
+  header,
+  .MuiDrawer-root,
+  .MuiIconButton-root,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+}
