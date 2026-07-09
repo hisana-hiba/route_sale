@@ -28,7 +28,7 @@ export function BusinessOverviewStrip({ metrics }: { metrics: BusinessMetric[] }
               sx={{
                 p: 2,
                 borderRadius: '12px',
-                bgcolor: dash.bg,
+                bgcolor: 'color-mix(in srgb, var(--rs-background) 50%, transparent)',
                 border: dash.cardBorder,
               }}
             >

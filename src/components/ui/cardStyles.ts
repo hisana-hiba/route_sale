@@ -7,8 +7,10 @@ type CardVariant = 'default' | 'warm' | 'gold' | 'rose' | 'sage' | 'cream'
 export function gradientCardSx(_variant: CardVariant = 'default', _accentColor?: string): SxProps<Theme> {
   return {
     borderRadius: dash.cardRadius,
-    background: dash.cardBg,
-    border: dash.cardBorder,
+    background: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
     boxShadow: dash.cardShadow,
     position: 'relative',
     overflow: 'hidden',
@@ -32,12 +34,16 @@ export const cardPaddingCompact = { px: 2.5, py: 2 } as const
 export const inputRootSx = {
   borderRadius: '12px',
   bgcolor: dash.cardBg,
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
 } as const
 
 export const toolbarIconButtonSx = {
   border: dash.cardBorder,
   borderRadius: 2,
   bgcolor: dash.cardBg,
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
   color: dash.body.color,
 } as const
 

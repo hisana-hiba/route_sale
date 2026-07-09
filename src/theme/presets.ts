@@ -1,6 +1,18 @@
 import type { ColorTokens } from '@/theme/palette'
 
-export type ColorPresetId = 'forest' | 'ocean' | 'royal' | 'sunset' | 'slate' | 'rose'
+export type ColorPresetId =
+  | 'forest'
+  | 'ocean'
+  | 'royal'
+  | 'sunset'
+  | 'slate'
+  | 'rose'
+  | 'emerald'
+  | 'teal'
+  | 'indigo'
+  | 'violet'
+  | 'amber'
+  | 'cyan'
 
 export interface ColorPresetMeta {
   id: ColorPresetId
@@ -15,6 +27,12 @@ export const colorPresetList: ColorPresetMeta[] = [
   { id: 'sunset', label: 'Sunset', swatch: ['#7C2D12', '#FB923C'] },
   { id: 'slate', label: 'Slate', swatch: ['#1E293B', '#94A3B8'] },
   { id: 'rose', label: 'Rose', swatch: ['#881337', '#FB7185'] },
+  { id: 'emerald', label: 'Emerald', swatch: ['#064E3B', '#34D399'] },
+  { id: 'teal', label: 'Teal', swatch: ['#134E4A', '#2DD4BF'] },
+  { id: 'indigo', label: 'Indigo', swatch: ['#312E81', '#6366F1'] },
+  { id: 'violet', label: 'Violet', swatch: ['#4C1D95', '#A78BFA'] },
+  { id: 'amber', label: 'Amber', swatch: ['#78350F', '#FBBF24'] },
+  { id: 'cyan', label: 'Cyan', swatch: ['#164E63', '#22D3EE'] },
 ]
 
 const shared = {
@@ -110,6 +128,30 @@ export const colorPresets: Record<ColorPresetId, { light: ColorTokens; dark: Col
   rose: {
     light: lightBase('#881337', '#9F1239', '#4C0519', '#FB7185', '#881337'),
     dark: darkBase('#881337', '#FB7185', '#4C0519', '#FDA4AF', '#4C0519'),
+  },
+  emerald: {
+    light: lightBase('#064E3B', '#0B6B4F', '#043327', '#34D399', '#064E3B'),
+    dark: darkBase('#064E3B', '#34D399', '#043327', '#6EE7B7', '#043327'),
+  },
+  teal: {
+    light: lightBase('#134E4A', '#0F766E', '#042F2E', '#2DD4BF', '#134E4A'),
+    dark: darkBase('#134E4A', '#2DD4BF', '#042F2E', '#5EEAD4', '#042F2E'),
+  },
+  indigo: {
+    light: lightBase('#3730A3', '#4F46E5', '#1E1B4B', '#818CF8', '#3730A3'),
+    dark: darkBase('#3730A3', '#818CF8', '#1E1B4B', '#A5B4FC', '#1E1B4B'),
+  },
+  violet: {
+    light: lightBase('#4C1D95', '#6D28D9', '#2E1065', '#A78BFA', '#4C1D95'),
+    dark: darkBase('#4C1D95', '#A78BFA', '#2E1065', '#C4B5FD', '#2E1065'),
+  },
+  amber: {
+    light: lightBase('#78350F', '#92400E', '#451A03', '#FBBF24', '#78350F'),
+    dark: darkBase('#78350F', '#FBBF24', '#451A03', '#FCD34D', '#451A03'),
+  },
+  cyan: {
+    light: lightBase('#164E63', '#0E7490', '#083344', '#22D3EE', '#164E63'),
+    dark: darkBase('#164E63', '#22D3EE', '#083344', '#67E8F9', '#083344'),
   },
 }
 

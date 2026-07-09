@@ -116,12 +116,14 @@ function NavGroup({ item }: { item: NavItem }) {
 }
 
 const iconButtonSx = {
-  border: `1px solid ${v.border}`,
+  border: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
   borderRadius: '10px',
   width: 40,
   height: 40,
-  bgcolor: v.surface,
-  '&:hover': { bgcolor: 'color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface))' },
+  bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  '&:hover': { bgcolor: 'color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface))' },
 }
 
 export function AppLayout() {
@@ -205,6 +207,8 @@ export function AppLayout() {
             p: 1.75,
             borderRadius: '14px',
             bgcolor: alpha('#000', 0.28),
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             border: `1px solid ${alpha(colors.secondary, 0.35)}`,
             backgroundImage: `radial-gradient(circle at 20% 80%, color-mix(in srgb, ${v.secondary} 14%, transparent) 0%, transparent 55%)`,
           }}
@@ -245,6 +249,8 @@ export function AppLayout() {
           m: 1.5,
           borderRadius: '12px',
           bgcolor: alpha('#000', 0.22),
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${alpha('#fff', 0.08)}`,
           backgroundImage: `radial-gradient(circle at 80% 20%, color-mix(in srgb, ${v.secondary} 12%, transparent) 0%, transparent 50%)`,
         }}
@@ -309,8 +315,10 @@ export function AppLayout() {
             gap: { xs: 1, md: 1.5 },
             py: { xs: 1, md: 0 },
             px: { xs: 1.5, sm: 2, md: 3 },
-            bgcolor: v.surface,
-            borderBottom: `1px solid ${v.border}`,
+            bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderBottom: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
             flexShrink: 0,
           }}
         >
@@ -329,8 +337,10 @@ export function AppLayout() {
               width: { md: 360, lg: 420 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
-                bgcolor: v.background,
-                '& fieldset': { borderColor: v.border },
+                bgcolor: 'color-mix(in srgb, var(--rs-background) 50%, transparent)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                '& fieldset': { borderColor: 'color-mix(in srgb, var(--rs-border) 80%, transparent)' },
               },
             }}
             InputProps={{
@@ -350,9 +360,11 @@ export function AppLayout() {
               px: 1.5,
               py: 0.75,
               borderRadius: '10px',
-              border: `1px solid ${v.border}`,
+              border: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
               cursor: 'pointer',
-              bgcolor: v.surface,
+              bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
             }}
           >
             <CalendarTodayIcon sx={{ fontSize: 15, color: v.textSecondary }} />

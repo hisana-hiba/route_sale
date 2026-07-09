@@ -48,8 +48,10 @@ export function KpiCard({ label, value, format, trend, icon, color, loading, var
       sx={{
         p: 2.5,
         borderRadius: '20px',
-        border: `1px solid ${isGradient ? 'transparent' : tokens.border}`,
-        bgcolor: isGradient ? 'transparent' : tokens.surface,
+        border: `1px solid ${isGradient ? 'transparent' : `color-mix(in srgb, ${tokens.border} 80%, transparent)`}`,
+        bgcolor: isGradient ? 'transparent' : `color-mix(in srgb, ${tokens.surface} 75%, transparent)`,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         background: isGradient ? `linear-gradient(135deg, ${alpha(accent, 0.08)} 0%, ${alpha(tokens.secondary, 0.06)} 100%)` : undefined,
         boxShadow: tokens.shadowSm,
         height: '100%',

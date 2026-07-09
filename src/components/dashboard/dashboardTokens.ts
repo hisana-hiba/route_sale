@@ -1,9 +1,9 @@
 /** Design tokens — single source of truth for Route Sale dashboard UI */
 export const dash = {
   bg: '#F9F8F3',
-  cardBg: '#FFFFFF',
+  cardBg: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
   cardRadius: '14px',
-  cardBorder: '1px solid rgba(0, 0, 0, 0.045)',
+  cardBorder: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
   cardShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.045)',
   cardPadding: { px: '24px', py: '20px' },
   sectionGap: 2.5,

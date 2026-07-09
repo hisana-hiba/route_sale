@@ -50,7 +50,7 @@ export function RoutePerformanceWidget({
             position: 'relative',
             height: 130,
             borderRadius: '12px',
-            bgcolor: dash.bg,
+            bgcolor: 'color-mix(in srgb, var(--rs-background) 50%, transparent)',
             overflow: 'hidden',
             border: dash.cardBorder,
           }}

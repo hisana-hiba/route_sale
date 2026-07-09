@@ -53,6 +53,8 @@ export function DashboardKpiCard({
         position: 'relative',
         borderRadius: kpi.radius,
         bgcolor: dash.cardBg,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         boxShadow: kpi.shadow,
         p: kpi.padding,
         minHeight: 140,

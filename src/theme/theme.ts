@@ -26,10 +26,12 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
       styleOverrides: {
         root: {
           borderRadius: 12,
-          border: '1px solid var(--rs-border)',
+          border: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
           boxShadow: 'var(--rs-shadow-sm)',
           backgroundImage: 'none',
-          backgroundColor: 'var(--rs-surface)',
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
         },
       },
     },
@@ -43,14 +45,19 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
           boxShadow: 'none',
           '&:hover': { boxShadow: c.shadowSm },
         },
-        containedPrimary: {
-          background: 'var(--rs-primary)',
-          backgroundColor: 'var(--rs-primary)',
-          color: '#fff',
-          '&:hover': { background: 'var(--rs-primary-dark)', backgroundColor: 'var(--rs-primary-dark)' },
-          '& .MuiSvgIcon-root': { color: '#fff' },
-        },
       },
+      variants: [
+        {
+          props: { variant: 'contained', color: 'primary' },
+          style: {
+            background: 'var(--rs-primary)',
+            backgroundColor: 'var(--rs-primary)',
+            color: '#fff',
+            '&:hover': { background: 'var(--rs-primary-dark)', backgroundColor: 'var(--rs-primary-dark)' },
+            '& .MuiSvgIcon-root': { color: '#fff' },
+          },
+        },
+      ],
     },
     MuiChip: {
       styleOverrides: {
@@ -61,15 +68,19 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backgroundColor: 'var(--rs-surface)',
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
         },
       },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--rs-surface)',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--rs-border)' },
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 50%, transparent)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'color-mix(in srgb, var(--rs-border) 80%, transparent)' },
           '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--rs-primary-light)' },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--rs-primary)' },
         },

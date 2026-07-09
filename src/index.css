@@ -74,11 +74,17 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.35;
+  opacity: 0.15;
   background-image:
+    url('/leaf-pattern.png'),
     radial-gradient(ellipse 120px 80px at 92% 8%, color-mix(in srgb, var(--rs-primary) 6%, transparent) 0%, transparent 70%),
     radial-gradient(ellipse 100px 70px at 4% 45%, color-mix(in srgb, var(--rs-secondary) 8%, transparent) 0%, transparent 70%),
     radial-gradient(ellipse 90px 60px at 78% 88%, color-mix(in srgb, var(--rs-primary) 5%, transparent) 0%, transparent 70%);
+  background-repeat: no-repeat;
+  background-position: right top, 0 0, 0 0, 0 0;
+  background-size: 900px auto, auto, auto, auto;
+  background-attachment: fixed, scroll, scroll, scroll;
+  z-index: 0;
 }
 
 @keyframes pulse {
@@ -93,25 +99,25 @@ body {
 .route-sale-grid .ag-theme-quartz-dark,
 .route-sale-grid [class*='ag-theme-'] {
   --ag-active-color: var(--rs-primary);
-  --ag-background-color: var(--rs-surface);
-  --ag-wrapper-background-color: var(--rs-surface);
-  --ag-data-background-color: var(--rs-surface);
+  --ag-background-color: transparent;
+  --ag-wrapper-background-color: transparent;
+  --ag-data-background-color: transparent;
   --ag-foreground-color: var(--rs-text-primary);
   --ag-secondary-foreground-color: var(--rs-text-secondary);
-  --ag-border-color: var(--rs-border);
-  --ag-secondary-border-color: var(--rs-border);
-  --ag-header-background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface));
+  --ag-border-color: color-mix(in srgb, var(--rs-border) 80%, transparent);
+  --ag-secondary-border-color: color-mix(in srgb, var(--rs-border) 80%, transparent);
+  --ag-header-background-color: color-mix(in srgb, var(--rs-primary) 4%, transparent);
   --ag-header-foreground-color: var(--rs-text-secondary);
-  --ag-odd-row-background-color: color-mix(in srgb, var(--rs-primary) 2%, var(--rs-surface));
-  --ag-row-hover-color: color-mix(in srgb, var(--rs-primary) 6%, var(--rs-surface));
-  --ag-selected-row-background-color: color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface));
-  --ag-chrome-background-color: var(--rs-surface);
-  --ag-control-panel-background-color: var(--rs-surface);
-  --ag-subheader-background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface));
-  --ag-panel-background-color: var(--rs-surface);
-  --ag-menu-background-color: var(--rs-surface);
-  --ag-tooltip-background-color: var(--rs-surface);
-  --ag-checkbox-background-color: var(--rs-surface);
+  --ag-odd-row-background-color: color-mix(in srgb, var(--rs-primary) 2%, transparent);
+  --ag-row-hover-color: color-mix(in srgb, var(--rs-primary) 6%, transparent);
+  --ag-selected-row-background-color: color-mix(in srgb, var(--rs-primary) 8%, transparent);
+  --ag-chrome-background-color: transparent;
+  --ag-control-panel-background-color: transparent;
+  --ag-subheader-background-color: color-mix(in srgb, var(--rs-primary) 4%, transparent);
+  --ag-panel-background-color: transparent;
+  --ag-menu-background-color: color-mix(in srgb, var(--rs-surface) 90%, transparent);
+  --ag-tooltip-background-color: color-mix(in srgb, var(--rs-surface) 90%, transparent);
+  --ag-checkbox-background-color: transparent;
   --ag-checkbox-checked-color: var(--rs-primary);
   --ag-input-focus-border-color: var(--rs-primary);
   --ag-range-selection-border-color: var(--rs-primary);
@@ -129,13 +135,13 @@ body {
 .route-sale-grid .ag-body-viewport,
 .route-sale-grid .ag-center-cols-viewport,
 .route-sale-grid .ag-center-cols-container {
-  background-color: var(--rs-surface) !important;
+  background-color: transparent !important;
   color: var(--rs-text-primary);
 }
 
 .route-sale-grid .ag-header {
-  background-color: color-mix(in srgb, var(--rs-primary) 4%, var(--rs-surface)) !important;
-  border-bottom: 1px solid var(--rs-border);
+  background-color: color-mix(in srgb, var(--rs-primary) 4%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rs-border) 80%, transparent);
 }
 
 .route-sale-grid .ag-header-cell,
@@ -144,17 +150,17 @@ body {
 }
 
 .route-sale-grid .ag-row {
-  border-bottom: 1px solid var(--rs-border);
-  background-color: var(--rs-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--rs-border) 80%, transparent);
+  background-color: transparent;
   color: var(--rs-text-primary);
 }
 
 .route-sale-grid .ag-row-odd {
-  background-color: color-mix(in srgb, var(--rs-primary) 2%, var(--rs-surface));
+  background-color: color-mix(in srgb, var(--rs-primary) 2%, transparent);
 }
 
 .route-sale-grid .ag-row-hover:not(.ag-full-width-row)::before {
-  background-color: color-mix(in srgb, var(--rs-primary) 6%, var(--rs-surface));
+  background-color: color-mix(in srgb, var(--rs-primary) 6%, transparent);
 }
 
 .route-sale-grid .ag-overlay-loading-wrapper,
