@@ -22,7 +22,7 @@ export function DataPanel({ title, subtitle, actions, children, noPadding, varia
             alignItems: 'center',
             px: 1.75,
             py: 1.25,
-            borderBottom: `1px solid ${v.border}`,
+            borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)`,
             position: 'relative',
             zIndex: 1,
           }}

@@ -135,7 +135,7 @@ export function DashboardPage() {
           <ChartCard title="Sales Overview" data={data.dailySales} type="area" height={200} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex' }}>
-          <ChartCard title="Collection vs Sales" data={data.salesVsCollection} type="bar" height={200} />
+          <ChartCard title="Collection vs Sales" data={data.salesVsCollection} type="bar" height={200} yAxisFormat="L" />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex' }}>
           <RoutePerformanceWidget

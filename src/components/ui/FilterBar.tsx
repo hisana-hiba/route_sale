@@ -53,10 +53,10 @@ export function FilterBar({
         alignItems: 'center',
         p: 1.5,
         borderRadius: '10px',
-        bgcolor: 'color-mix(in srgb, var(--rs-background) 50%, transparent)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
+        bgcolor: 'color-mix(in srgb, var(--rs-background) 40%, transparent)',
+        backdropFilter: 'blur(20px) saturate(120%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+        border: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)`,
         mb: 2,
       }}
     >

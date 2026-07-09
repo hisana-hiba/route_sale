@@ -8,13 +8,14 @@ interface ChartCardProps {
   data: ChartData
   type?: 'area' | 'bar'
   height?: number
+  yAxisFormat?: 'K' | 'L'
 }
 
-export function ChartCard({ title, data, type = 'area', height = 200 }: ChartCardProps) {
+export function ChartCard({ title, data, type = 'area', height = 200, yAxisFormat = 'K' }: ChartCardProps) {
   return (
     <Box sx={{ ...gradientCardSx('default'), ...cardPadding, width: '100%', height: '100%', minHeight: { xs: 240, md: 300 } }}>
       <Typography sx={{ ...dashCardHeaderSx, mb: 1.5 }}>{title}</Typography>
-      <ApexChart data={data} type={type} height={height} />
+      <ApexChart data={data} type={type} height={height} yAxisFormat={yAxisFormat} />
     </Box>
   )
 }

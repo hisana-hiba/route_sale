@@ -202,7 +202,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           <Grid size={{ xs: 12, md: 4 }}>
             <DataPanel title="Summary">
               {config.stats.map((s) => (
-                <Box key={s.key} sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid ${v.border}` }}>
+                <Box key={s.key} sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
                   <Typography variant="body2" color="text.secondary">{s.label}</Typography>
                   <Typography variant="body2" fontWeight={700}>{formatStatValue(data?.stats?.[s.key], s.format)}</Typography>
                 </Box>
@@ -216,7 +216,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, md: 8 }}>
             <DataPanel title="Live Map" subtitle="GPS positions of field staff">
-              <Box sx={{ height: 280, borderRadius: 3, bgcolor: mix.surface(4), display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${v.borderStrong}`, position: 'relative', overflow: 'hidden' }}>
+              <Box sx={{ height: 280, borderRadius: 3, bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${v.borderStrong}`, position: 'relative', overflow: 'hidden' }}>
                 <Box sx={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 30% 40%, ${mix.secondary(15)} 0%, transparent 50%), radial-gradient(circle at 70% 60%, ${mix.primary(10)} 0%, transparent 40%)` }} />
                 {rows.slice(0, 5).map((r, i) => (
                   <Box key={String(r.id)} sx={{ position: 'absolute', left: `${15 + i * 18}%`, top: `${20 + (i % 3) * 25}%`, width: 12, height: 12, borderRadius: '50%', bgcolor: v.secondary, boxShadow: `0 0 0 4px ${mix.secondary(30)}`, animation: 'pulse 2s infinite' }} />
@@ -228,7 +228,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           <Grid size={{ xs: 12, md: 4 }}>
             <DataPanel title="Agent Status">
               {rows.slice(0, 6).map((r) => (
-                <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, borderBottom: `1px solid ${v.border}` }}>
+                <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: r.status === 'active' ? v.success : v.warning }} />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" fontWeight={600}>{String(r.salesman ?? r.driver ?? '')}</Typography>
@@ -327,11 +327,11 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
 
       {layoutVariant === 'ledger' && (
         <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: v.successSoft, border: `1px solid ${mix.success(20)}` }}>
+          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-success-soft) 50%, transparent)', border: `1px solid ${mix.success(20)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
             <Typography variant="caption" color="text.secondary">Total Debit</Typography>
             <Typography variant="h6" fontWeight={800} color="success.main">{formatStatValue(data?.stats?.totalDebit, 'currency')}</Typography>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: v.errorSoft, border: `1px solid ${mix.error(15)}` }}>
+          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-error-soft) 50%, transparent)', border: `1px solid ${mix.error(15)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
             <Typography variant="caption" color="text.secondary">Total Credit</Typography>
             <Typography variant="h6" fontWeight={800} color="error.main">{formatStatValue(data?.stats?.totalCreditBal, 'currency')}</Typography>
           </Box>
@@ -426,7 +426,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         <DialogTitle sx={{ fontWeight: 700 }}>{config.entityName} Details</DialogTitle>
         <DialogContent>
           {selected && config.columns.map((col) => (
-            <Box key={col.field} sx={{ display: 'flex', py: 1.25, borderBottom: `1px solid ${v.border}` }}>
+            <Box key={col.field} sx={{ display: 'flex', py: 1.25, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
               <Typography variant="body2" color="text.secondary" sx={{ width: 140, flexShrink: 0 }}>{col.header}</Typography>
               <Typography variant="body2" fontWeight={500} component="div">
                 {col.type === 'status' ? <StatusChip status={String(selected[col.field])} /> : String(cellValue(selected, col))}

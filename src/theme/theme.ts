@@ -25,20 +25,20 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          border: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
-          boxShadow: 'var(--rs-shadow-sm)',
+          borderRadius: 16,
+          border: '1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.05)',
           backgroundImage: 'none',
-          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+          backdropFilter: 'blur(20px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 12,
           textTransform: 'none',
           fontWeight: 600,
           padding: '8px 20px',
@@ -67,20 +67,22 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     MuiPaper: {
       styleOverrides: {
         root: {
+          borderRadius: 16,
           backgroundImage: 'none',
-          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+          backdropFilter: 'blur(20px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
         },
       },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 50%, transparent)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'color-mix(in srgb, var(--rs-border) 80%, transparent)' },
+          borderRadius: 12,
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 30%, transparent)',
+          backdropFilter: 'blur(20px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'color-mix(in srgb, var(--rs-border-strong) 40%, transparent)' },
           '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--rs-primary-light)' },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--rs-primary)' },
         },
@@ -117,10 +119,12 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 16,
-          border: '1px solid var(--rs-border)',
-          boxShadow: 'var(--rs-shadow-lg)',
-          backgroundColor: 'var(--rs-surface)',
+          borderRadius: 24,
+          border: '1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
+          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+          backdropFilter: 'blur(20px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
         },
       },
     },
@@ -129,7 +133,7 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 10,
+            borderRadius: 12,
           },
         },
       },
@@ -139,13 +143,14 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
         paper: {
           border: 'none',
           boxShadow: 'none',
+          borderRadius: 0,
         },
       },
     },
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 12,
           marginBottom: 2,
         },
       },
@@ -153,7 +158,7 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     MuiPaginationItem: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
+          borderRadius: 8,
           '&.Mui-selected': {
             backgroundColor: 'var(--rs-primary)',
             color: '#fff',
@@ -193,7 +198,7 @@ export function createAppTheme(mode: 'light' | 'dark', preset: ColorPresetId = '
       caption: { fontSize: '0.75rem', color: c.textMuted },
       button: { fontWeight: 600 },
     },
-    shape: { borderRadius: 10 },
+    shape: { borderRadius: 12 },
     components: sharedComponents(mode, preset, customAccent),
   })
 }

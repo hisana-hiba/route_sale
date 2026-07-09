@@ -11,9 +11,10 @@ interface ApexChartProps {
   data: ChartData
   type?: 'line' | 'bar' | 'area' | 'donut' | 'pie'
   height?: number
+  yAxisFormat?: 'K' | 'L'
 }
 
-export function ApexChart({ data, type = 'area', height = 300 }: ApexChartProps) {
+export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K' }: ApexChartProps) {
   const theme = useTheme()
   const mode = useAppStore((s) => s.themeMode)
   const colorPreset = useAppStore((s) => s.colorPreset)
@@ -39,7 +40,7 @@ export function ApexChart({ data, type = 'area', height = 300 }: ApexChartProps)
       gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 100] },
     },
     plotOptions: {
-      bar: { borderRadius: 6, columnWidth: '45%', borderRadiusApplication: 'end' },
+      bar: { borderRadius: 2, columnWidth: '25%', borderRadiusApplication: 'end' },
       pie: { donut: { size: '72%', labels: { show: true, total: { show: true, fontWeight: 700 } } } },
     },
     xaxis: {
@@ -51,7 +52,11 @@ export function ApexChart({ data, type = 'area', height = 300 }: ApexChartProps)
     yaxis: {
       labels: {
         style: { colors: tokens.textSecondary, fontSize: '11px' },
-        formatter: (v) => `₹${(v / 1000).toFixed(0)}K`,
+        formatter: (v) => {
+          if (v === 0) return '₹0'
+          if (yAxisFormat === 'L') return `₹${(v / 100000).toFixed(0)}L`
+          return `₹${(v / 1000).toFixed(0)}K`
+        },
       },
     },
     grid: {
@@ -62,14 +67,14 @@ export function ApexChart({ data, type = 'area', height = 300 }: ApexChartProps)
     legend: {
       position: 'top', horizontalAlign: 'right',
       labels: { colors: tokens.textPrimary },
-      markers: { size: 6, shape: 'circle' },
+      markers: { size: 6, radius: 2 },
     },
     tooltip: {
       theme: mode,
       style: { fontSize: '12px' },
       y: { formatter: (v) => `₹${v.toLocaleString('en-IN')}` },
     },
-  }), [data.categories, theme, type, mode, tokens])
+  }), [data.categories, theme, type, mode, tokens, yAxisFormat])
 
   const series = type === 'donut'
     ? data.series[0]?.data ?? []

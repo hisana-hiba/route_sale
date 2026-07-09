@@ -7,10 +7,10 @@ type CardVariant = 'default' | 'warm' | 'gold' | 'rose' | 'sage' | 'cream'
 export function gradientCardSx(_variant: CardVariant = 'default', _accentColor?: string): SxProps<Theme> {
   return {
     borderRadius: dash.cardRadius,
-    background: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
+    background: dash.cardBg,
+    backdropFilter: 'blur(20px) saturate(120%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+    border: dash.cardBorder,
     boxShadow: dash.cardShadow,
     position: 'relative',
     overflow: 'hidden',
@@ -34,16 +34,16 @@ export const cardPaddingCompact = { px: 2.5, py: 2 } as const
 export const inputRootSx = {
   borderRadius: '12px',
   bgcolor: dash.cardBg,
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
+  backdropFilter: 'blur(20px) saturate(120%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(120%)',
 } as const
 
 export const toolbarIconButtonSx = {
   border: dash.cardBorder,
-  borderRadius: 2,
+  borderRadius: '10px',
   bgcolor: dash.cardBg,
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
+  backdropFilter: 'blur(20px) saturate(120%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(120%)',
   color: dash.body.color,
 } as const
 

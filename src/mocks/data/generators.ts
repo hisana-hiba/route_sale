@@ -97,10 +97,13 @@ export function generateChartData(slug: string, points = 12, seriesCount = 2) {
     categories: months.slice(0, points),
     series: Array.from({ length: seriesCount }, (_, i) => ({
       name: names[i] ?? `Series ${i + 1}`,
-      data: months.slice(0, points).map(() => amount(30000, 500000)),
+      data: months.slice(0, points).map(() => amount(
+        slug.includes('collection') ? 300000 : 30000,
+        slug.includes('collection') ? 1800000 : 500000
+      )),
     })).map((s, i) => ({
       ...s,
-      data: s.data.map((v) => Math.round(v * (0.7 + rand() * 0.6) * (i === 0 ? 1 : 0.6))),
+      data: s.data.map((v) => Math.round(v * (0.7 + rand() * 0.6) * (slug.includes('collection') ? 1 : (i === 0 ? 1 : 0.6)))),
     })),
   }
 }

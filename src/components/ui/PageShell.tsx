@@ -61,7 +61,7 @@ export const whiteCardSx = {
 } as const
 
 export const primaryButtonSx = {
-  borderRadius: '10px',
+  borderRadius: '12px',
   textTransform: 'none' as const,
   fontWeight: 600,
   background: v.primary,

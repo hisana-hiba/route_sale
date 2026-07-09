@@ -80,7 +80,7 @@ function NavGroup({ item }: { item: NavItem }) {
     <>
       <ListItemButton
         onClick={() => setOpen(!open)}
-        sx={{ borderRadius: '8px', mx: 1.5, py: 0.75, color: alpha('#fff', 0.55), '&:hover': { bgcolor: 'transparent' } }}
+        sx={{ borderRadius: '10px', mx: 1.5, py: 0.75, color: alpha('#fff', 0.55), '&:hover': { bgcolor: 'transparent' } }}
       >
         {Icon && <ListItemIcon sx={{ minWidth: 34, color: alpha('#fff', 0.7) }}><Icon sx={{ fontSize: 20 }} /></ListItemIcon>}
         <ListItemText
@@ -116,13 +116,13 @@ function NavGroup({ item }: { item: NavItem }) {
 }
 
 const iconButtonSx = {
-  border: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
+  border: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)`,
   borderRadius: '10px',
   width: 40,
   height: 40,
-  bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
+  bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+  backdropFilter: 'blur(20px) saturate(120%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(120%)',
   '&:hover': { bgcolor: 'color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface))' },
 }
 
@@ -205,11 +205,11 @@ export function AppLayout() {
             mx: 1.5,
             mb: 1.25,
             p: 1.75,
-            borderRadius: '14px',
-            bgcolor: alpha('#000', 0.28),
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: `1px solid ${alpha(colors.secondary, 0.35)}`,
+            borderRadius: '16px',
+            bgcolor: alpha('#000', 0.15),
+            backdropFilter: 'blur(20px) saturate(120%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+            border: `1px solid ${alpha(colors.secondary, 0.25)}`,
             backgroundImage: `radial-gradient(circle at 20% 80%, color-mix(in srgb, ${v.secondary} 14%, transparent) 0%, transparent 55%)`,
           }}
         >
@@ -247,10 +247,10 @@ export function AppLayout() {
         sx={{
           p: 2,
           m: 1.5,
-          borderRadius: '12px',
-          bgcolor: alpha('#000', 0.22),
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: '16px',
+          bgcolor: alpha('#000', 0.15),
+          backdropFilter: 'blur(20px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
           border: `1px solid ${alpha('#fff', 0.08)}`,
           backgroundImage: `radial-gradient(circle at 80% 20%, color-mix(in srgb, ${v.secondary} 12%, transparent) 0%, transparent 50%)`,
         }}
@@ -315,10 +315,10 @@ export function AppLayout() {
             gap: { xs: 1, md: 1.5 },
             py: { xs: 1, md: 0 },
             px: { xs: 1.5, sm: 2, md: 3 },
-            bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderBottom: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
+            bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+            backdropFilter: 'blur(20px) saturate(120%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+            borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)`,
             flexShrink: 0,
           }}
         >
@@ -337,10 +337,10 @@ export function AppLayout() {
               width: { md: 360, lg: 420 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
-                bgcolor: 'color-mix(in srgb, var(--rs-background) 50%, transparent)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                '& fieldset': { borderColor: 'color-mix(in srgb, var(--rs-border) 80%, transparent)' },
+                bgcolor: 'color-mix(in srgb, var(--rs-background) 30%, transparent)',
+                backdropFilter: 'blur(20px) saturate(120%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+                '& fieldset': { borderColor: 'color-mix(in srgb, var(--rs-border-strong) 40%, transparent)' },
               },
             }}
             InputProps={{
@@ -360,11 +360,11 @@ export function AppLayout() {
               px: 1.5,
               py: 0.75,
               borderRadius: '10px',
-              border: `1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)`,
+              border: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)`,
               cursor: 'pointer',
-              bgcolor: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
+              bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+              backdropFilter: 'blur(20px) saturate(120%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(120%)',
             }}
           >
             <CalendarTodayIcon sx={{ fontSize: 15, color: v.textSecondary }} />
@@ -410,7 +410,7 @@ export function AppLayout() {
           </IconButton>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', pl: 0.5 }} onClick={(e) => setProfileAnchor(e.currentTarget)}>
-            <Avatar sx={{ width: 38, height: 38, bgcolor: v.primary, fontSize: '0.8rem', fontWeight: 700 }}>
+            <Avatar sx={{ width: 38, height: 38, borderRadius: '10px', bgcolor: v.primary, fontSize: '0.8rem', fontWeight: 700 }}>
               {(user?.name ?? 'Admin User').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
             </Avatar>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>

@@ -1,10 +1,10 @@
 /** Design tokens — single source of truth for Route Sale dashboard UI */
 export const dash = {
   bg: '#F9F8F3',
-  cardBg: 'color-mix(in srgb, var(--rs-surface) 75%, transparent)',
-  cardRadius: '14px',
-  cardBorder: '1px solid color-mix(in srgb, var(--rs-border) 80%, transparent)',
-  cardShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.045)',
+  cardBg: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
+  cardRadius: '16px',
+  cardBorder: '1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)',
+  cardShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.05)',
   cardPadding: { px: '24px', py: '20px' },
   sectionGap: 2.5,
   title: { size: '15px', weight: 700, color: '#1A1A1A' },
@@ -21,14 +21,14 @@ export const dash = {
 export const kpi = {
   radius: '20px',
   padding: '24px',
-  shadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+  shadow: '0 8px 32px 0 rgba(0, 0, 0, 0.05)',
   labelSize: '14px',
   labelColor: '#4B5563',
   valueSize: '30px',
   valueColor: '#000000',
   trendSize: '12px',
   iconSize: 44,
-  iconRadius: '12px',
+  iconRadius: '14px',
 } as const
 
 export const kpiCardThemes = [
