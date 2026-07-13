@@ -84,6 +84,14 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       navigate('/sales/sales-return/new')
       return
     }
+    if (config.documentedFlow === 'stock-transfer') {
+      navigate('/stock-management/stock-transfer/new')
+      return
+    }
+    if (config.documentedFlow === 'purchase-order') {
+      navigate('/purchase/purchase-orders/new')
+      return
+    }
     setIsEdit(false); setSelected(null)
     const defaults: Record<string, string> = {}
     config.formFields.forEach((f) => {
@@ -150,212 +158,214 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       subtitle={config.subtitle}
       breadcrumbs={[{ label: 'Home', path: '/' }, { label: config.title }]}
       actions={
-        config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' ? (
+        config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' ? (
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
-            {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : `Add ${config.entityName}`}
+            {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : `Add ${config.entityName}`}
           </Button>
         ) : undefined
       }
     >
-      {config.documentedFlow && config.documentedFlow !== 'new-order' && (
+      {config.documentedFlow && config.documentedFlow !== 'new-order' && config.documentedFlow !== 'stock-transfer' && config.documentedFlow !== 'purchase-order' && (
         <DocumentedFlowPanel flow={config.documentedFlow} />
       )}
 
       <Grid container spacing={1.5} sx={{ mb: 2 }}>
-        {config.stats.map((stat, i) => {
-          const Icon = statIcons[i % statIcons.length]
-          return (
-            <Grid key={stat.key} size={{ xs: 6, sm: 6, md: 3 }}>
-              <ModuleStatCard
-                label={stat.label}
-                value={formatStatValue(data?.stats?.[stat.key], stat.format)}
-                format={stat.format as 'currency' | 'number'}
-                loading={isLoading}
-                trend={[12, -3, 8, 5][i % 4]}
-                icon={<Icon sx={{ fontSize: 20 }} />}
-                iconIndex={i}
-                sparkData={sparkSets[i % sparkSets.length]}
-                variant={(['warm', 'gold', 'rose', 'sage'] as const)[i % 4]}
-              />
-            </Grid>
-          )
-        })}
-      </Grid>
-
-      {/* Layout-specific top section */}
-      {features.includes('routeOrderPerformance') && (
-        <RouteOrderPerformance orders={rows as Parameters<typeof RouteOrderPerformance>[0]['orders']} />
-      )}
-
-      {features.includes('warehouseTransfer') && <WarehouseTransferPanel />}
-
-      {layoutVariant === 'report' && data?.chart && (
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid size={{ xs: 12, md: 8 }}>
-            <DataPanel title={config.chartTitle ?? 'Analysis'}>
-              {features.includes('chartTypeSwitch') && (
-                <ChartTypeSelector value={chartType} onChange={setChartType} />
-              )}
-              <ApexChart data={data.chart} type={chartType} height={280} />
-            </DataPanel>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <DataPanel title="Summary">
-              {config.stats.map((s) => (
-                <Box key={s.key} sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
-                  <Typography variant="body2" color="text.secondary">{s.label}</Typography>
-                  <Typography variant="body2" fontWeight={700}>{formatStatValue(data?.stats?.[s.key], s.format)}</Typography>
-                </Box>
-              ))}
-            </DataPanel>
-          </Grid>
+          {config.stats.map((stat, i) => {
+            const Icon = statIcons[i % statIcons.length]
+            return (
+              <Grid key={stat.key} size={{ xs: 6, sm: 6, md: 3 }}>
+                <ModuleStatCard
+                  label={stat.label}
+                  value={formatStatValue(data?.stats?.[stat.key], stat.format)}
+                  format={stat.format as 'currency' | 'number'}
+                  loading={isLoading}
+                  trend={[12, -3, 8, 5][i % 4]}
+                  icon={<Icon sx={{ fontSize: 20 }} />}
+                  iconIndex={i}
+                  sparkData={sparkSets[i % sparkSets.length]}
+                  variant={(['warm', 'gold', 'rose', 'sage'] as const)[i % 4]}
+                />
+              </Grid>
+            )
+          })}
         </Grid>
-      )}
 
-      {layoutVariant === 'tracking' && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, md: 8 }}>
-            <DataPanel title="Live Map" subtitle="GPS positions of field staff">
-              <Box sx={{ height: 280, borderRadius: 3, bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${v.borderStrong}`, position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 30% 40%, ${mix.secondary(15)} 0%, transparent 50%), radial-gradient(circle at 70% 60%, ${mix.primary(10)} 0%, transparent 40%)` }} />
-                {rows.slice(0, 5).map((r, i) => (
-                  <Box key={String(r.id)} sx={{ position: 'absolute', left: `${15 + i * 18}%`, top: `${20 + (i % 3) * 25}%`, width: 12, height: 12, borderRadius: '50%', bgcolor: v.secondary, boxShadow: `0 0 0 4px ${mix.secondary(30)}`, animation: 'pulse 2s infinite' }} />
-                ))}
-                <Typography variant="body2" color="text.secondary" sx={{ zIndex: 1 }}>Interactive map view — {rows.length} agents tracked</Typography>
-              </Box>
-            </DataPanel>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <DataPanel title="Agent Status">
-              {rows.slice(0, 6).map((r) => (
-                <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: r.status === 'active' ? v.success : v.warning }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" fontWeight={600}>{String(r.salesman ?? r.driver ?? '')}</Typography>
-                    <Typography variant="caption" color="text.secondary">{String(r.lastUpdate ?? r.route ?? '')}</Typography>
-                  </Box>
-                  <StatusChip status={String(r.status)} />
-                </Box>
-              ))}
-            </DataPanel>
-          </Grid>
-        </Grid>
-      )}
+        {features.includes('routeOrderPerformance') && (
+          <RouteOrderPerformance orders={rows as Parameters<typeof RouteOrderPerformance>[0]['orders']} />
+        )}
 
-      {layoutVariant === 'route' && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          {rows.slice(0, 3).map((r) => (
-            <Grid key={String(r.id)} size={{ xs: 12, md: 4 }}>
-              <Box sx={{ p: 2.5, ...whiteCardSx }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="subtitle2" fontWeight={700}>{String(r.name ?? r.code)}</Typography>
-                  <StatusChip status={String(r.status)} />
-                </Box>
-                <Typography variant="caption" color="text.secondary" display="block">{String(r.salesman)}</Typography>
-                <Box sx={{ mt: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="caption">Outlets visited</Typography>
-                    <Typography variant="caption" fontWeight={700}>{String(r.visited)}/{String(r.outlets)}</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={(Number(r.visited) / Number(r.outlets)) * 100 || 0} sx={{ height: 6, borderRadius: 3 }} />
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary">Collection</Typography>
-                  <Typography variant="body2" fontWeight={700}>{formatCurrency(Number(r.collections) || 0)}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        {features.includes('warehouseTransfer') && <WarehouseTransferPanel />}
 
-      {layoutVariant === 'inventory' && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <DataPanel title="Stock Overview">
-              {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
-                <Box key={String(r.id)} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" fontWeight={600}>{String(r.name)}</Typography>
-                    <Typography variant="caption" color="error.main">{String(r.stock)} / {String(r.minStock)}</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={Math.min((Number(r.stock) / Number(r.minStock)) * 100, 100)} color="warning" sx={{ height: 5, borderRadius: 2, mt: 0.5 }} />
-                </Box>
-              ))}
-            </DataPanel>
-          </Grid>
-          {data?.chart && (
+        {layoutVariant === 'report' && data?.chart && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid size={{ xs: 12, md: 8 }}>
-              <DataPanel title="Stock Movement">
-                <ApexChart data={data.chart} type="bar" height={220} />
+              <DataPanel title={config.chartTitle ?? 'Analysis'}>
+                {features.includes('chartTypeSwitch') && (
+                  <ChartTypeSelector value={chartType} onChange={setChartType} />
+                )}
+                <ApexChart data={data.chart} type={chartType} height={280} />
               </DataPanel>
             </Grid>
-          )}
-        </Grid>
-      )}
-
-      {layoutVariant === 'hr' && data?.chart && (
-        <Box sx={{ mb: 3 }}>
-          <DataPanel title="Workforce Analytics">
-            <ApexChart data={data.chart} type="donut" height={240} />
-          </DataPanel>
-        </Box>
-      )}
-
-      {layoutVariant === 'customer' && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          {rows.slice(0, 4).map((r) => (
-            <Grid key={String(r.id)} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Box sx={{ p: 2, ...whiteCardSx }}>
-                <Typography variant="subtitle2" fontWeight={700} noWrap>{String(r.name)}</Typography>
-                <Typography variant="caption" color="text.secondary">{String(r.route)}</Typography>
-                <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">Outstanding</Typography>
-                    <Typography variant="body2" fontWeight={700} color="warning.main">{formatCurrency(Number(r.outstanding) || 0)}</Typography>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <DataPanel title="Summary">
+                {config.stats.map((s) => (
+                  <Box key={s.key} sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
+                    <Typography variant="body2" color="text.secondary">{s.label}</Typography>
+                    <Typography variant="body2" fontWeight={700}>{formatStatValue(data?.stats?.[s.key], s.format)}</Typography>
                   </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" color="text.secondary">Limit</Typography>
-                    <Typography variant="body2" fontWeight={600}>{formatCurrency(Number(r.creditLimit) || 0)}</Typography>
+                ))}
+              </DataPanel>
+            </Grid>
+          </Grid>
+        )}
+
+        {layoutVariant === 'tracking' && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <DataPanel title="Live Map" subtitle="GPS positions of field staff">
+                <Box sx={{ height: 260, borderRadius: 3, bgcolor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${v.borderStrong}`, position: 'relative', overflow: 'hidden' }}>
+                  <Box sx={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 30% 40%, ${mix.secondary(15)} 0%, transparent 50%), radial-gradient(circle at 70% 60%, ${mix.primary(10)} 0%, transparent 40%)` }} />
+                  {rows.slice(0, 5).map((r, i) => (
+                    <Box key={String(r.id)} sx={{ position: 'absolute', left: `${15 + i * 18}%`, top: `${20 + (i % 3) * 25}%`, width: 12, height: 12, borderRadius: '50%', bgcolor: v.secondary, boxShadow: `0 0 0 4px ${mix.secondary(30)}`, animation: 'pulse 2s infinite' }} />
+                  ))}
+                  <Typography variant="body2" color="text.secondary" sx={{ zIndex: 1 }}>Interactive map view — {rows.length} agents tracked</Typography>
+                </Box>
+              </DataPanel>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <DataPanel title="Agent Status">
+                {rows.slice(0, 6).map((r) => (
+                  <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: r.status === 'active' ? v.success : v.warning }} />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" fontWeight={600}>{String(r.salesman ?? r.driver ?? '')}</Typography>
+                      <Typography variant="caption" color="text.secondary">{String(r.lastUpdate ?? r.route ?? '')}</Typography>
+                    </Box>
+                    <StatusChip status={String(r.status)} />
+                  </Box>
+                ))}
+              </DataPanel>
+            </Grid>
+          </Grid>
+        )}
+
+        {layoutVariant === 'route' && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            {rows.slice(0, 3).map((r) => (
+              <Grid key={String(r.id)} size={{ xs: 12, md: 4 }}>
+                <Box sx={{ p: 2.5, ...whiteCardSx }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="subtitle2" fontWeight={700}>{String(r.name ?? r.code)}</Typography>
+                    <StatusChip status={String(r.status)} />
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" display="block">{String(r.salesman)}</Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="caption">Outlets visited</Typography>
+                      <Typography variant="caption" fontWeight={700}>{String(r.visited)}/{String(r.outlets)}</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={(Number(r.visited) / Number(r.outlets)) * 100 || 0} sx={{ height: 6, borderRadius: 3 }} />
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary">Collection</Typography>
+                    <Typography variant="body2" fontWeight={700}>{formatCurrency(Number(r.collections) || 0)}</Typography>
                   </Box>
                 </Box>
-              </Box>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {layoutVariant === 'inventory' && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <DataPanel title="Stock Overview">
+                {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
+                  <Box key={String(r.id)} sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" fontWeight={600}>{String(r.name)}</Typography>
+                      <Typography variant="caption" color="error.main">{String(r.stock)} / {String(r.minStock)}</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={Math.min((Number(r.stock) / Number(r.minStock)) * 100, 100)} color="warning" sx={{ height: 5, borderRadius: 2, mt: 0.5 }} />
+                  </Box>
+                ))}
+              </DataPanel>
             </Grid>
-          ))}
-        </Grid>
-      )}
+            {data?.chart && (
+              <Grid size={{ xs: 12, md: 8 }}>
+                <DataPanel title="Stock Movement">
+                  <ApexChart data={data.chart} type="bar" height={200} />
+                </DataPanel>
+              </Grid>
+            )}
+          </Grid>
+        )}
 
-      {layoutVariant === 'ledger' && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-success-soft) 50%, transparent)', border: `1px solid ${mix.success(20)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-            <Typography variant="caption" color="text.secondary">Total Debit</Typography>
-            <Typography variant="h6" fontWeight={800} color="success.main">{formatStatValue(data?.stats?.totalDebit, 'currency')}</Typography>
+        {layoutVariant === 'hr' && data?.chart && (
+          <Box sx={{ mb: 2 }}>
+            <DataPanel title="Workforce Analytics">
+              <ApexChart data={data.chart} type="donut" height={220} />
+            </DataPanel>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-error-soft) 50%, transparent)', border: `1px solid ${mix.error(15)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-            <Typography variant="caption" color="text.secondary">Total Credit</Typography>
-            <Typography variant="h6" fontWeight={800} color="error.main">{formatStatValue(data?.stats?.totalCreditBal, 'currency')}</Typography>
+        )}
+
+        {layoutVariant === 'customer' && (
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            {rows.slice(0, 4).map((r) => (
+              <Grid key={String(r.id)} size={{ xs: 12, sm: 6, md: 3 }}>
+                <Box sx={{ p: 2, ...whiteCardSx }}>
+                  <Typography variant="subtitle2" fontWeight={700} noWrap>{String(r.name)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{String(r.route)}</Typography>
+                  <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Outstanding</Typography>
+                      <Typography variant="body2" fontWeight={700} color="warning.main">{formatCurrency(Number(r.outstanding) || 0)}</Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="caption" color="text.secondary">Limit</Typography>
+                      <Typography variant="body2" fontWeight={600}>{formatCurrency(Number(r.creditLimit) || 0)}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {layoutVariant === 'ledger' && (
+          <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-success-soft) 50%, transparent)', border: `1px solid ${mix.success(20)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+              <Typography variant="caption" color="text.secondary">Total Debit</Typography>
+              <Typography variant="h6" fontWeight={800} color="success.main">{formatStatValue(data?.stats?.totalDebit, 'currency')}</Typography>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-error-soft) 50%, transparent)', border: `1px solid ${mix.error(15)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+              <Typography variant="caption" color="text.secondary">Total Credit</Typography>
+              <Typography variant="h6" fontWeight={800} color="error.main">{formatStatValue(data?.stats?.totalCreditBal, 'currency')}</Typography>
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
 
-      {layoutVariant === 'logistics' && data?.chart && (
-        <Box sx={{ mb: 3 }}>
-          <DataPanel title="Delivery Volume">
-            <ApexChart data={data.chart} type="area" height={220} />
-          </DataPanel>
-        </Box>
-      )}
+        {layoutVariant === 'logistics' && data?.chart && (
+          <Box sx={{ mb: 2 }}>
+            <DataPanel title="Delivery Volume">
+              <ApexChart data={data.chart} type="area" height={200} />
+            </DataPanel>
+          </Box>
+        )}
 
-      {(layoutVariant === 'transaction' || layoutVariant === 'settings') && data?.chart && config.showChart && (
-        <Box sx={{ mb: 3 }}>
-          <DataPanel title={config.chartTitle ?? 'Trend'}>
-            <ApexChart data={data.chart} type={config.chartType ?? 'area'} height={260} />
-          </DataPanel>
-        </Box>
-      )}
+        {(layoutVariant === 'transaction' || layoutVariant === 'settings') && data?.chart && config.showChart && (
+          <Box sx={{ mb: 2 }}>
+            <DataPanel title={config.chartTitle ?? 'Trend'}>
+              <ApexChart data={data.chart} type={config.chartType ?? 'area'} height={240} />
+            </DataPanel>
+          </Box>
+        )}
 
-      {/* Data Table */}
-      <DataPanel title="Records" subtitle={`${data?.total ?? 0} total records`} noPadding>
+      <DataPanel
+        title="Records"
+        subtitle={`${data?.total ?? 0} total records`}
+        noPadding
+      >
         <Box sx={{ px: { xs: 1.5, md: 2.5 }, pt: 2 }}>
           <FilterBar
             search={search} onSearchChange={setSearch}
@@ -374,7 +384,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         <Box
           key={themeVersion}
           className={`route-sale-grid ${themeMode === 'dark' ? 'ag-theme-quartz-dark' : 'ag-theme-quartz'}`}
-          sx={{ height: { xs: 320, sm: 400, md: 460 }, width: '100%', px: { xs: 0.5, md: 1 } }}
+          sx={{ width: '100%', px: { xs: 0.5, md: 1 } }}
         >
           <AgGridReact
             key={`grid-${themeVersion}`}
@@ -382,26 +392,29 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             columnDefs={columnDefs}
             loading={isLoading || isFetching}
             suppressCellFocus
+            domLayout="autoHeight"
             rowHeight={52}
             headerHeight={48}
           />
         </Box>
-        <TablePagination
-          component="div"
-          count={data?.total ?? 0}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          rowsPerPage={pageSize}
-          onRowsPerPageChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(0) }}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          sx={{
-            overflowX: 'auto',
-            '& .MuiTablePagination-toolbar': { flexWrap: 'wrap', gap: 1, px: { xs: 1, md: 2 } },
-          }}
-        />
-        {features.includes('reportTotals') && data?.totals && (
-          <ReportTotalsBar columns={config.columns} totals={data.totals} sumFields={sumFields} />
-        )}
+        <Box>
+          <TablePagination
+            component="div"
+            count={data?.total ?? 0}
+            page={page}
+            onPageChange={(_, p) => setPage(p)}
+            rowsPerPage={pageSize}
+            onRowsPerPageChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(0) }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              overflowX: 'auto',
+              '& .MuiTablePagination-toolbar': { flexWrap: 'wrap', gap: 1, px: { xs: 1, md: 2 } },
+            }}
+          />
+          {features.includes('reportTotals') && data?.totals && (
+            <ReportTotalsBar columns={config.columns} totals={data.totals} sumFields={sumFields} />
+          )}
+        </Box>
       </DataPanel>
 
       {/* Dialogs */}

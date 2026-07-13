@@ -12,12 +12,21 @@ interface PageShellProps {
   breadcrumbs?: Breadcrumb[]
   actions?: React.ReactNode
   children?: React.ReactNode
+  /** When true the shell becomes a flex column that fills the available height
+   *  so the grid section inside ModuleLayout can grow to fill remaining space. */
+  fillHeight?: boolean
 }
 
-export function PageShell({ title, subtitle, breadcrumbs, actions, children }: PageShellProps) {
+export function PageShell({ title, subtitle, breadcrumbs, actions, children, fillHeight }: PageShellProps) {
   return (
-    <Box component={motion.div} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-      <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
+    <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      sx={fillHeight ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' } : undefined}
+    >
+      <Box sx={{ mb: 1.5, flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
         <Box sx={{ flex: 1, minWidth: { xs: '100%', sm: 200 } }}>
           {breadcrumbs && breadcrumbs.length > 0 && (
             <Breadcrumbs
@@ -50,7 +59,9 @@ export function PageShell({ title, subtitle, breadcrumbs, actions, children }: P
           </Box>
         )}
       </Box>
-      {children}
+      {fillHeight
+        ? <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>{children}</Box>
+        : children}
     </Box>
   )
 }

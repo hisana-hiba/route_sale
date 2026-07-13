@@ -45,6 +45,8 @@ export interface FormFieldDef {
 export type DocumentedFlow =
   | 'new-order'
   | 'sales-return'
+  | 'stock-transfer'
+  | 'purchase-order'
   | 'e-way-bill'
   | 'multi-assign-route'
   | 'live-route'

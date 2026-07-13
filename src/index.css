@@ -142,6 +142,11 @@ body {
 .route-sale-grid .ag-header {
   background-color: color-mix(in srgb, var(--rs-primary) 4%, transparent) !important;
   border-bottom: 1px solid color-mix(in srgb, var(--rs-border) 80%, transparent);
+  position: relative !important;
+}
+
+.route-sale-grid .ag-body-viewport {
+  overflow: visible !important;
 }
 
 .route-sale-grid .ag-header-cell,

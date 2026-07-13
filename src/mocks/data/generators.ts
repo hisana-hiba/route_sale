@@ -84,8 +84,19 @@ function seededRandom(seed: string) {
 }
 
 export function generateChartData(slug: string, points = 12, seriesCount = 2) {
-  const rand = seededRandom(slug)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+  if (slug === 'dashboard-collection') {
+    return {
+      categories: months.slice(0, points),
+      series: [
+        { name: 'Collection', data: [1650000, 1000000, 1100000, 1300000, 1400000, 1300000, 800000, 1300000, 1000000, 1500000, 600000, 500000].slice(0, points) },
+        { name: 'Sales', data: [900000, 800000, 1000000, 1200000, 600000, 1100000, 1400000, 1200000, 1100000, 1300000, 800000, 500000].slice(0, points) }
+      ]
+    }
+  }
+
+  const rand = seededRandom(slug)
   const names = slug.includes('expense') ? ['Expenses', 'Budget']
     : slug.includes('purchase') ? ['Purchases', 'Returns']
     : slug.includes('collection') ? ['Collection', 'Target']
@@ -164,12 +175,21 @@ function invoice(slug: string, i: number) {
   }
 }
 
-function purchaseRecord(slug: string, i: number) {
-  const amt = amount(10000, 500000)
+function purchaseRecord(_slug: string, i: number) {
+  const itemCount = amount(2, 6)
+  const selectedProducts = Array.from({ length: itemCount }, (_, j) => products[(i + j) % products.length])
+  const quantities = selectedProducts.map(() => amount(10, 200))
+  const totalQuantity = quantities.reduce((sum, q) => sum + q, 0)
+  const unitPrices = selectedProducts.map(() => amount(20, 500))
+  const amt = quantities.reduce((sum, q, idx) => sum + q * unitPrices[idx], 0)
   return {
     id: nextId(), code: `PO-${String(i + 1).padStart(5, '0')}`,
     supplier: pick(suppliers), date: date(Math.floor(Math.random() * 60)),
-    amount: amt, items: amount(3, 25), status: pick(statuses.purchase),
+    productList: selectedProducts.join(', '),
+    totalQuantity,
+    amount: amt,
+    items: itemCount,
+    status: pick(statuses.purchase),
     warehouse: pick(warehouses), expectedDate: date(-amount(3, 14)),
     createdAt: new Date().toISOString(),
   }
@@ -330,6 +350,244 @@ function gstRecord(slug: string, i: number) {
   }
 }
 
+function currentStockRecord(slug: string, i: number) {
+  const stock = amount(0, 800)
+  const min = amount(50, 200)
+  return {
+    id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
+    name: products[i % products.length],
+    category: pick(categories),
+    brand: pick(brands),
+    unit: pick(units),
+    warehouse: pick(warehouses),
+    stock, minStock: min,
+    mrp: amount(20, 500),
+    amount: amount(20, 500) * stock,
+    status: stock === 0 ? 'overdue' as RecordStatus : stock < min ? 'low_stock' as RecordStatus : 'active' as RecordStatus,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function stockAdjustmentRecord(slug: string, i: number) {
+  const adjustmentTypes = ['Addition', 'Removal', 'Correction', 'Damage', 'Return']
+  const reasons = ['Physical Count', 'Damaged Goods', 'Theft / Loss', 'Supplier Return', 'System Error', 'Other']
+  const adjStatuses = ['pending', 'approved', 'completed', 'cancelled'] as RecordStatus[]
+  const qty = amount(1, 200)
+  return {
+    id: nextId(), code: `ADJ-${String(i + 1).padStart(5, '0')}`,
+    date: date(Math.floor(Math.random() * 60)),
+    name: products[i % products.length],
+    warehouse: pick(warehouses),
+    adjustmentType: pick(adjustmentTypes),
+    quantity: qty,
+    stock: qty,
+    reason: pick(reasons),
+    adjustedBy: pick(salesmen),
+    status: pick(adjStatuses),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function reportRecord(_slug: string, i: number) {
+  const debit = amount(0, 1) > 0.5 ? amount(5000, 250000) : 0
+  const credit = debit === 0 ? amount(5000, 250000) : 0
+  const descriptions = [
+    'Sales revenue — route collections', 'Purchase of raw materials', 'Salary expense',
+    'Rent — warehouse facility', 'GST output liability', 'Customer receipt — UPI',
+    'Supplier payment — cheque', 'Fuel & logistics expense', 'Marketing spend',
+    'Interest income', 'Depreciation charge', 'Opening balance adjustment',
+  ]
+  return {
+    id: nextId(),
+    code: `RPT-${String(i + 1).padStart(5, '0')}`,
+    particulars: descriptions[i % descriptions.length],
+    description: descriptions[i % descriptions.length],
+    date: date(Math.floor(Math.random() * 120)),
+    debit, credit,
+    account: pick(accounts),
+    status: pick(['completed', 'pending', 'draft'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function purchaseReportRecord(_slug: string, i: number) {
+  const amt = amount(10000, 500000)
+  const supplier = pick(suppliers)
+  return {
+    id: nextId(),
+    code: `POR-${String(i + 1).padStart(5, '0')}`,
+    particulars: `Purchase from ${supplier}`,
+    supplier,
+    date: date(Math.floor(Math.random() * 90)),
+    debit: amt,
+    credit: 0,
+    amount: amt,
+    items: amount(3, 25),
+    status: pick(statuses.purchase),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function collectionReportRecord(_slug: string, i: number) {
+  const amt = amount(5000, 150000)
+  const customer = pick(customers)
+  return {
+    id: nextId(),
+    code: `COL-${String(i + 1).padStart(5, '0')}`,
+    particulars: `Collection from ${customer}`,
+    customer,
+    date: date(Math.floor(Math.random() * 60)),
+    credit: amt,
+    debit: 0,
+    amount: amt,
+    route: pick(routes),
+    status: pick(['completed', 'pending'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function routeReportRecord(_slug: string, i: number) {
+  const collections = amount(10000, 150000)
+  const sales = amount(20000, 300000)
+  const routeName = routes[i % routes.length]
+  return {
+    id: nextId(),
+    code: `RTR-${String(i + 1).padStart(4, '0')}`,
+    particulars: routeName,
+    name: routeName,
+    salesman: pick(salesmen),
+    date: date(Math.floor(Math.random() * 30)),
+    outlets: amount(8, 25),
+    visited: amount(5, 20),
+    collections,
+    sales,
+    debit: sales,
+    credit: collections,
+    status: pick(statuses.route),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function productReportRecord(_slug: string, i: number) {
+  const stock = amount(50, 800)
+  const unitPrice = amount(20, 500)
+  const amt = unitPrice * stock
+  const productName = products[i % products.length]
+  return {
+    id: nextId(),
+    code: `PRD-${String(i + 1).padStart(5, '0')}`,
+    name: productName,
+    particulars: `${productName} — ${pick(categories)}`,
+    category: pick(categories),
+    brand: pick(brands),
+    date: date(Math.floor(Math.random() * 90)),
+    stock,
+    quantity: stock,
+    debit: amt,
+    credit: 0,
+    amount: amt,
+    status: pick(statuses.inventory),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function outstandingReportRecord(_slug: string, i: number) {
+  const outstanding = amount(10000, 200000)
+  const customer = customers[i % customers.length]
+  return {
+    id: nextId(),
+    code: `OUT-${String(i + 1).padStart(5, '0')}`,
+    particulars: customer,
+    customer,
+    name: customer,
+    date: date(Math.floor(Math.random() * 90)),
+    debit: outstanding,
+    credit: 0,
+    outstanding,
+    creditLimit: amount(50000, 300000),
+    status: (outstanding > 150000 ? 'overdue' : 'pending') as RecordStatus,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function stockTransferRecord(slug: string, i: number) {
+  const transferStatuses = ['pending', 'approved', 'in_transit', 'completed', 'cancelled'] as RecordStatus[]
+  const st = pick(transferStatuses)
+  const approvedStatuses: RecordStatus[] = ['approved', 'in_transit', 'completed']
+  return {
+    id: nextId(), code: `TRF-${String(i + 1).padStart(5, '0')}`,
+    date: date(Math.floor(Math.random() * 60)),
+    sourceWarehouse: pick(warehouses),
+    destinationWarehouse: pick(warehouses),
+    productCount: amount(1, 20),
+    totalQuantity: amount(10, 500),
+    requestedBy: pick(salesmen),
+    approvedBy: approvedStatuses.includes(st) ? pick(salesmen) : '—',
+    notes: pick(['Routine stock transfer', 'Emergency restocking', 'Branch replenishment', 'End-of-season transfer', 'Return to main warehouse']),
+    status: st,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function lowStockRecord(slug: string, i: number) {
+  const available = amount(0, 70)
+  const reorderLevel = amount(80, 250)
+  const st: RecordStatus = available === 0 ? 'overdue' : available < reorderLevel * 0.3 ? 'low_stock' : 'pending'
+  return {
+    id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
+    name: products[i % products.length],
+    category: pick(categories),
+    brand: pick(brands),
+    warehouse: pick(warehouses),
+    stock: available,
+    minStock: reorderLevel,
+    status: st,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function expiryRecord(slug: string, i: number) {
+  const scenarios: { daysFromNow: number; status: RecordStatus }[] = [
+    { daysFromNow: -amount(1, 90), status: 'overdue' },   // already expired
+    { daysFromNow: amount(1, 7), status: 'low_stock' },    // expiring ≤ 7 days
+    { daysFromNow: amount(8, 30), status: 'pending' },     // expiring ≤ 30 days
+    { daysFromNow: amount(31, 365), status: 'active' },    // safe
+  ]
+  const scenario = pick(scenarios)
+  const daysRemaining = Math.max(0, scenario.daysFromNow)
+  return {
+    id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
+    name: products[i % products.length],
+    batch: `B${amount(1000, 9999)}`,
+    warehouse: pick(warehouses),
+    category: pick(categories),
+    batchStockCount: amount(10, 500),
+    batchDate: date(amount(90, 365)),
+    expiry: date(-scenario.daysFromNow),
+    daysRemaining,
+    status: scenario.status,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function warehouseRecord(slug: string, i: number) {
+  const warehouseNames = ['Main Warehouse', 'Cold Storage', 'Depot North', 'Depot South', 'Central Hub', 'Branch Store A', 'Branch Store B']
+  const totalStock = amount(200, 2000)
+  return {
+    id: nextId(), code: `WH-${String(i + 1).padStart(3, '0')}`,
+    name: warehouseNames[i % warehouseNames.length],
+    manager: pick(salesmen),
+    phone: `+91 ${amount(70000000, 99999999) + 9000000000}`,
+    location: pick(['Pune', 'Mumbai', 'Nashik', 'Nagpur', 'Kolhapur']),
+    stockRooms: amount(5, 30),
+    stock: totalStock,
+    amount: amount(50000, 2000000),
+    capacity: amount(2000, 10000),
+    status: 'active' as RecordStatus,
+    createdAt: new Date().toISOString(),
+  }
+}
+
 function settingsRecord(slug: string, i: number) {
   return {
     id: nextId(), code: `CFG-${String(i + 1).padStart(3, '0')}`,
@@ -359,29 +617,37 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'sales-orders': salesOrder, 'sales-invoices': invoice, 'sales-sales-return': invoice,
   'sales-credit-notes': invoice, 'sales-quotations': salesOrder, 'sales-billing': invoice,
   'sales-route-sales': routeRecord, 'sales-sales-report': salesOrder,
-  'sales-customer-ledger': ledgerRecord, 'sales-collection-report': ledgerRecord,
+  'sales-customer-ledger': ledgerRecord, 'sales-collection-report': collectionReportRecord,
   // Accounting
   'accounting-transactions': ledgerRecord, 'accounting-day-book': ledgerRecord,
   'accounting-cash-book': ledgerRecord, 'accounting-bank-book': ledgerRecord,
   'accounting-journal-entries': ledgerRecord, 'accounting-ledger': ledgerAccountRecord,
-  'accounting-trial-balance': ledgerRecord, 'accounting-profit-loss': ledgerRecord,
-  'accounting-balance-sheet': ledgerRecord, 'accounting-receipt-voucher': ledgerRecord,
+  'accounting-trial-balance': reportRecord, 'accounting-profit-loss': reportRecord,
+  'accounting-balance-sheet': reportRecord, 'accounting-receipt-voucher': ledgerRecord,
   'accounting-payment-voucher': ledgerRecord, 'accounting-contra-voucher': ledgerRecord,
-  'accounting-purchase-report': purchaseRecord, 'accounting-sales-report': salesOrder,
+  'accounting-purchase-report': purchaseReportRecord, 'accounting-sales-report': salesOrder,
   'accounting-supplier-settlement': purchaseRecord, 'accounting-customer-settlement': customerRecord,
-  'accounting-outstanding-report': customerRecord, 'accounting-gst-report': gstRecord,
-  'accounting-tax-summary': gstRecord,
+  'accounting-outstanding-report': outstandingReportRecord, 'accounting-gst-report': gstRecord,
+  'accounting-tax-summary': reportRecord,
   // Purchase
   'purchase-purchase-orders': purchaseRecord, 'purchase-purchases': purchaseRecord,
   'purchase-supplier-management': purchaseRecord, 'purchase-supplier-settlement': purchaseRecord,
-  'purchase-purchase-return': purchaseRecord, 'purchase-purchase-report': purchaseRecord,
+  'purchase-purchase-return': purchaseRecord, 'purchase-purchase-report': purchaseReportRecord,
   // Inventory
   'inventory-product-catalog': productRecord, 'inventory-categories': productRecord,
   'inventory-brands': productRecord, 'inventory-units': productRecord,
   'inventory-warehouse': productRecord, 'inventory-stock-allocation': productRecord,
-  'inventory-stock-transfer': productRecord, 'inventory-stock-adjustment': productRecord,
-  'inventory-stock-movement': productRecord, 'inventory-low-stock': productRecord,
-  'inventory-batch-management': productRecord, 'inventory-expiry-report': productRecord,
+  'inventory-stock-transfer': stockTransferRecord, 'inventory-stock-adjustment': productRecord,
+  'inventory-stock-movement': productRecord, 'inventory-low-stock': lowStockRecord,
+  'inventory-batch-management': productRecord, 'inventory-expiry-report': expiryRecord,
+  // Stock Management (top-level module)
+  'stock-management-current-stock': currentStockRecord,
+  'stock-management-stock-adjustment': stockAdjustmentRecord,
+  'stock-management-stock-transfer': stockTransferRecord,
+  'stock-management-low-stock': lowStockRecord,
+  'stock-management-batch-management': productRecord,
+  'stock-management-expiry-report': expiryRecord,
+  'stock-management-warehouse': warehouseRecord,
   // Route Sales
   'route-sales-dashboard': routeRecord, 'route-sales-route-assignment': routeRecord,
   'route-sales-todays-routes': routeRecord, 'route-sales-weekly-schedule': routeRecord,
@@ -389,7 +655,7 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'route-sales-route-tracking': trackingRecord, 'route-sales-route-performance': routePerformanceOrder,
   'route-sales-attendance': employeeRecord, 'route-sales-customer-visits': routeRecord,
   'route-sales-gps-tracking': trackingRecord, 'route-sales-collections': ledgerRecord,
-  'route-sales-expenses': expenseRecord, 'route-sales-route-sales-report': routeRecord,
+  'route-sales-expenses': expenseRecord, 'route-sales-route-sales-report': routeReportRecord,
   // Customers
   'customers-customer-list': customerRecord, 'customers-customer-profile': customerRecord,
   'customers-outstanding': customerRecord, 'customers-credit-limit': customerRecord,
@@ -405,12 +671,12 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'logistics-vehicle-management': logisticsRecord, 'logistics-driver-management': employeeRecord,
   'logistics-live-tracking': trackingRecord, 'logistics-e-way-bills': logisticsRecord,
   // Reports
-  'reports-sales-report': salesOrder, 'reports-purchase-report': purchaseRecord,
-  'reports-collection-report': ledgerRecord, 'reports-expense-report': ledgerRecord,
-  'reports-route-report': routeRecord, 'reports-product-report': productRecord,
-  'reports-employee-report': employeeRecord, 'reports-profit-loss': ledgerRecord,
-  'reports-balance-sheet': ledgerRecord, 'reports-cash-flow': ledgerRecord,
-  'reports-gst-report': gstRecord, 'reports-inventory-report': productRecord,
+  'reports-sales-report': salesOrder, 'reports-purchase-report': purchaseReportRecord,
+  'reports-collection-report': collectionReportRecord, 'reports-expense-report': expenseRecord,
+  'reports-route-report': routeReportRecord, 'reports-product-report': productReportRecord,
+  'reports-employee-report': employeeRecord, 'reports-profit-loss': reportRecord,
+  'reports-balance-sheet': reportRecord, 'reports-cash-flow': reportRecord,
+  'reports-gst-report': gstRecord, 'reports-inventory-report': productReportRecord,
   // Admin
   'admin-users': employeeRecord, 'admin-roles': employeeRecord,
   'admin-permissions': settingsRecord, 'admin-notifications': settingsRecord,
@@ -419,10 +685,20 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'admin-audit-logs': settingsRecord,
 }
 
+export function isReportSlug(slug: string) {
+  return slug.includes('report')
+    || slug.includes('profit-loss')
+    || slug.includes('balance-sheet')
+    || slug.includes('trial-balance')
+    || slug.includes('tax-summary')
+    || slug.includes('cash-flow')
+}
+
 export function generateModuleRecords(slug: string, count = 60): Record<string, unknown>[] {
   idSeq = slug.split('').reduce((a, c) => a + c.charCodeAt(0), 1000)
   const gen = generatorMap[slug] ?? salesOrder
-  return Array.from({ length: count }, (_, i) => gen(slug, i))
+  const recordCount = isReportSlug(slug) ? Math.max(count, 75) : count
+  return Array.from({ length: recordCount }, (_, i) => gen(slug, i))
 }
 
 export function generateDashboardStats() {

@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
 import { QuickActionsPanel } from '@/components/dashboard/QuickActionsPanel'
 import { ChartCard } from '@/components/dashboard/ChartCard'
+import { CollectionVsSalesChart } from '@/components/dashboard/CollectionVsSalesChart'
 import { RoutePerformanceWidget } from '@/components/dashboard/RoutePerformanceWidget'
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable'
 import { BusinessOverviewStrip } from '@/components/dashboard/BusinessOverviewStrip'
@@ -30,6 +31,7 @@ function getGreeting() {
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
 }
+
 
 export function DashboardPage() {
   const { data, isLoading } = useQuery({
@@ -132,10 +134,10 @@ export function DashboardPage() {
 
       <Grid container spacing={dashboardGridSpacing} sx={gridSx}>
         <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex' }}>
-          <ChartCard title="Sales Overview" data={data.dailySales} type="area" height={200} />
+          <ChartCard title="Sales Overview" data={data.dailySales} type="area" height={240} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex' }}>
-          <ChartCard title="Collection vs Sales" data={data.salesVsCollection} type="bar" height={200} yAxisFormat="L" />
+          <CollectionVsSalesChart />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex' }}>
           <RoutePerformanceWidget

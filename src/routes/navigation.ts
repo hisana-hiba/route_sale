@@ -6,10 +6,10 @@ import InventoryIcon from '@mui/icons-material/Inventory'
 import RouteIcon from '@mui/icons-material/Route'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle'
+import StorageIcon from '@mui/icons-material/Storage'
 
 export interface NavItem {
   id: string
@@ -87,12 +87,20 @@ export const navigation: NavItem[] = [
       { id: 'products', label: 'Products', path: '/inventory/product-catalog' },
       { id: 'categories', label: 'Categories', path: '/inventory/categories' },
       { id: 'brands', label: 'Brands', path: '/inventory/brands' },
-      { id: 'warehouse', label: 'Warehouses', path: '/inventory/warehouse' },
-      { id: 'stock-allocation', label: 'Stock Management', path: '/inventory/stock-allocation' },
-      { id: 'stock-transfer', label: 'Stock Transfer', path: '/inventory/stock-transfer' },
-      { id: 'low-stock', label: 'Low Stock', path: '/inventory/low-stock' },
-      { id: 'batch-management', label: 'Batch Management', path: '/inventory/batch-management' },
-      { id: 'expiry-report', label: 'Expiry Report', path: '/inventory/expiry-report' },
+    ],
+  },
+  {
+    id: 'stock-management',
+    label: 'Stock Management',
+    icon: StorageIcon,
+    children: [
+      { id: 'sm-current-stock', label: 'Current Stock', path: '/stock-management/current-stock' },
+      { id: 'sm-stock-transfer', label: 'Stock Transfer', path: '/stock-management/stock-transfer' },
+      { id: 'sm-stock-adjustment', label: 'Stock Adjustment', path: '/stock-management/stock-adjustment' },
+      { id: 'sm-low-stock', label: 'Low Stock', path: '/stock-management/low-stock' },
+      { id: 'sm-batch-management', label: 'Batch Management', path: '/stock-management/batch-management' },
+      { id: 'sm-expiry-report', label: 'Expiry Report', path: '/stock-management/expiry-report' },
+      { id: 'sm-warehouse', label: 'Warehouse', path: '/stock-management/warehouse' },
     ],
   },
   {
@@ -192,8 +200,14 @@ const _allPaths = flattenNav([
       { id: 'outstanding-report', label: 'Outstanding Report', path: '/accounting/outstanding-report' },
       { id: 'tax-summary', label: 'Tax Summary', path: '/accounting/tax-summary' },
       { id: 'units', label: 'Units', path: '/inventory/units' },
+      { id: 'stock-allocation', label: 'Stock Allocation', path: '/inventory/stock-allocation' },
       { id: 'stock-adjustment', label: 'Stock Adjustment', path: '/inventory/stock-adjustment' },
       { id: 'stock-movement', label: 'Stock Movement', path: '/inventory/stock-movement' },
+      { id: 'inv-warehouse', label: 'Warehouses', path: '/inventory/warehouse' },
+      { id: 'inv-stock-transfer', label: 'Stock Transfer (Legacy)', path: '/inventory/stock-transfer' },
+      { id: 'inv-low-stock', label: 'Low Stock (Legacy)', path: '/inventory/low-stock' },
+      { id: 'inv-batch-management', label: 'Batch Management (Legacy)', path: '/inventory/batch-management' },
+      { id: 'inv-expiry-report', label: 'Expiry Report (Legacy)', path: '/inventory/expiry-report' },
       { id: 'pur-settlement', label: 'Supplier Settlement', path: '/purchase/supplier-settlement' },
       { id: 'pur-report', label: 'Purchase Report', path: '/purchase/purchase-report' },
       { id: 'rs-attendance', label: 'Attendance', path: '/route-sales/attendance' },

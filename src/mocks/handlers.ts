@@ -1,6 +1,7 @@
 import { http, HttpResponse, delay } from 'msw'
 import { generateChartData, generateDashboardStats, generateModuleRecords, computeStats, computeColumnTotals } from './data/generators'
 import { flowHandlers } from './flowHandlers'
+import { shops } from './flowData'
 import { getModuleConfig } from '@/config/modules'
 import type { ListParams } from '@/api/client'
 
@@ -35,6 +36,28 @@ function paginate<T>(items: T[], page = 1, pageSize = 10) {
 
 export const handlers = [
   ...flowHandlers,
+
+  http.get('/api/customers/top-sales-shops', async () => {
+    await delay(300)
+    const salesData = [
+      { sales: 485000, orders: 156, lastOrder: '2 days ago', growth: 18.6 },
+      { sales: 412000, orders: 142, lastOrder: '1 day ago', growth: 12.4 },
+      { sales: 398000, orders: 128, lastOrder: '3 days ago', growth: 9.8 },
+      { sales: 365000, orders: 115, lastOrder: '5 days ago', growth: 7.2 },
+      { sales: 298000, orders: 98, lastOrder: '1 week ago', growth: 5.1 },
+      { sales: 245000, orders: 87, lastOrder: '4 days ago', growth: 3.8 },
+    ]
+    const topShops = shops
+      .map((shop, i) => ({
+        id: shop.id,
+        name: shop.name,
+        category: shop.category,
+        ...salesData[i % salesData.length],
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4)
+    return HttpResponse.json({ topShops })
+  }),
 
   http.get('/api/dashboard', async () => {
     await delay(350)
