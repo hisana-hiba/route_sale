@@ -49,7 +49,7 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
       gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 100] },
     },
     plotOptions: {
-      bar: { borderRadius: 2, columnWidth: '40%' },
+      bar: { borderRadius: 4, borderRadiusApplication: 'end', columnWidth: '55%' },
       pie: { donut: { size: '72%', labels: { show: true, total: { show: true, fontWeight: 700 } } } },
     },
     xaxis: {

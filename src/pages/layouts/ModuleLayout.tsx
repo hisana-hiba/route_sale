@@ -16,8 +16,16 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { ModuleStatCard } from '@/components/ui/ModuleStatCard'
+import { OverviewColumnChart } from '@/components/dashboard/OverviewColumnChart'
+import { PeriodFilterPanel } from '@/components/orders/PeriodFilterPanel'
+import { OrderRecordCards } from '@/components/orders/OrderRecordCards'
+import { usePeriodFilters } from '@/hooks/usePeriodFilters'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { DataPanel } from '@/components/ui/DataPanel'
 import { StatusChip } from '@/components/ui/StatusChip'
@@ -50,13 +58,26 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const location = useLocation()
   const themeMode = useAppStore((s) => s.themeMode)
   const themeVersion = useAppStore((s) => s.themeVersion)
+
+  const isOrdersPage = config.slug === 'sales-orders'
+
+  const {
+    period: orderPeriod,
+    customFrom: orderCustomFrom,
+    customTo: orderCustomTo,
+    applied: appliedPeriodFilters,
+    setPeriod: setOrderPeriod,
+    setCustomFrom: setOrderCustomFrom,
+    setCustomTo: setOrderCustomTo,
+  } = usePeriodFilters()
+
   const {
     data, isLoading, isFetching, refetch,
     page, setPage, pageSize, setPageSize,
     search, setSearch, statusFilter, setStatusFilter,
     dateFrom, setDateFrom, dateTo, setDateTo,
     createMutation, updateMutation, deleteMutation,
-  } = useModuleData(config)
+  } = useModuleData(config, isOrdersPage ? appliedPeriodFilters : undefined)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [viewOpen, setViewOpen] = useState(false)
@@ -66,6 +87,11 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const [chartType, setChartType] = useState<ChartType>(config.chartType ?? 'bar')
 
   const { control, handleSubmit, reset, setValue } = useForm({ defaultValues: {} as Record<string, string> })
+
+  useEffect(() => {
+    if (isOrdersPage) setPage(0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedPeriodFilters, isOrdersPage])
 
   useEffect(() => {
     if ((location.state as { openCreate?: boolean })?.openCreate) {
@@ -150,6 +176,9 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       : [])
 
   const statIcons = [AssessmentIcon, TrendingUpIcon, Inventory2OutlinedIcon, GroupsOutlinedIcon]
+  const orderStatIcons = [ShoppingBagOutlinedIcon, CurrencyRupeeIcon, ScheduleOutlinedIcon, CheckCircleOutlinedIcon]
+  const orderStatTrends = [12.4, 18.6, -6.3, 9.8]
+  const orderStatTrendLabels = ['vs last month', 'vs last month', 'vs last month', 'vs last month']
   const sparkSets = [[40, 55, 45, 70, 60], [30, 50, 40, 65, 55], [80, 75, 70, 72, 68], [35, 45, 50, 55, 60]]
 
   return (
@@ -169,6 +198,32 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         <DocumentedFlowPanel flow={config.documentedFlow} />
       )}
 
+      {isOrdersPage && (
+        <PeriodFilterPanel
+          period={orderPeriod}
+          customFrom={orderCustomFrom}
+          customTo={orderCustomTo}
+          onPeriodChange={setOrderPeriod}
+          onCustomFromChange={setOrderCustomFrom}
+          onCustomToChange={setOrderCustomTo}
+        />
+      )}
+
+      {isOrdersPage ? (
+        <OverviewColumnChart
+          kpis={config.stats.map((stat, i) => ({
+            label: stat.label,
+            value: isLoading ? '—' : formatStatValue(data?.stats?.[stat.key], stat.format),
+            trend: orderStatTrends[i % orderStatTrends.length],
+            trendLabel: orderStatTrendLabels[i % orderStatTrendLabels.length],
+            icon: (() => { const Icon = orderStatIcons[i % orderStatIcons.length]; return <Icon /> })(),
+            iconIndex: i,
+          }))}
+          chartTitle={config.chartTitle ?? 'Orders Trend'}
+          chart={data?.chart}
+          loading={isLoading}
+        />
+      ) : (
       <Grid container spacing={1.5} sx={{ mb: 2 }}>
           {config.stats.map((stat, i) => {
             const Icon = statIcons[i % statIcons.length]
@@ -189,6 +244,9 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             )
           })}
         </Grid>
+      )}
+
+      {isOrdersPage && <OrderRecordCards orders={rows} />}
 
         {features.includes('routeOrderPerformance') && (
           <RouteOrderPerformance orders={rows as Parameters<typeof RouteOrderPerformance>[0]['orders']} />
@@ -211,7 +269,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
                 {config.stats.map((s) => (
                   <Box key={s.key} sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
                     <Typography variant="body2" color="text.secondary">{s.label}</Typography>
-                    <Typography variant="body2" fontWeight={700}>{formatStatValue(data?.stats?.[s.key], s.format)}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatStatValue(data?.stats?.[s.key], s.format)}</Typography>
                   </Box>
                 ))}
               </DataPanel>
@@ -238,7 +296,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
                   <Box key={String(r.id)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: r.status === 'active' ? v.success : v.warning }} />
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight={600}>{String(r.salesman ?? r.driver ?? '')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{String(r.salesman ?? r.driver ?? '')}</Typography>
                       <Typography variant="caption" color="text.secondary">{String(r.lastUpdate ?? r.route ?? '')}</Typography>
                     </Box>
                     <StatusChip status={String(r.status)} />
@@ -255,20 +313,20 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
               <Grid key={String(r.id)} size={{ xs: 12, md: 4 }}>
                 <Box sx={{ p: 2.5, ...whiteCardSx }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="subtitle2" fontWeight={700}>{String(r.name ?? r.code)}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{String(r.name ?? r.code)}</Typography>
                     <StatusChip status={String(r.status)} />
                   </Box>
-                  <Typography variant="caption" color="text.secondary" display="block">{String(r.salesman)}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{String(r.salesman)}</Typography>
                   <Box sx={{ mt: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                       <Typography variant="caption">Outlets visited</Typography>
-                      <Typography variant="caption" fontWeight={700}>{String(r.visited)}/{String(r.outlets)}</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>{String(r.visited)}/{String(r.outlets)}</Typography>
                     </Box>
                     <LinearProgress variant="determinate" value={(Number(r.visited) / Number(r.outlets)) * 100 || 0} sx={{ height: 6, borderRadius: 3 }} />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                     <Typography variant="body2" color="text.secondary">Collection</Typography>
-                    <Typography variant="body2" fontWeight={700}>{formatCurrency(Number(r.collections) || 0)}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatCurrency(Number(r.collections) || 0)}</Typography>
                   </Box>
                 </Box>
               </Grid>
@@ -283,7 +341,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
                 {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
                   <Box key={String(r.id)} sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" fontWeight={600}>{String(r.name)}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{String(r.name)}</Typography>
                       <Typography variant="caption" color="error.main">{String(r.stock)} / {String(r.minStock)}</Typography>
                     </Box>
                     <LinearProgress variant="determinate" value={Math.min((Number(r.stock) / Number(r.minStock)) * 100, 100)} color="warning" sx={{ height: 5, borderRadius: 2, mt: 0.5 }} />
@@ -314,16 +372,16 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             {rows.slice(0, 4).map((r) => (
               <Grid key={String(r.id)} size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ p: 2, ...whiteCardSx }}>
-                  <Typography variant="subtitle2" fontWeight={700} noWrap>{String(r.name)}</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>{String(r.name)}</Typography>
                   <Typography variant="caption" color="text.secondary">{String(r.route)}</Typography>
                   <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography variant="caption" color="text.secondary">Outstanding</Typography>
-                      <Typography variant="body2" fontWeight={700} color="warning.main">{formatCurrency(Number(r.outstanding) || 0)}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }} color="warning.main">{formatCurrency(Number(r.outstanding) || 0)}</Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
                       <Typography variant="caption" color="text.secondary">Limit</Typography>
-                      <Typography variant="body2" fontWeight={600}>{formatCurrency(Number(r.creditLimit) || 0)}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(Number(r.creditLimit) || 0)}</Typography>
                     </Box>
                   </Box>
                 </Box>
@@ -336,11 +394,11 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-success-soft) 50%, transparent)', border: `1px solid ${mix.success(20)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
               <Typography variant="caption" color="text.secondary">Total Debit</Typography>
-              <Typography variant="h6" fontWeight={800} color="success.main">{formatStatValue(data?.stats?.totalDebit, 'currency')}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800 }} color="success.main">{formatStatValue(data?.stats?.totalDebit, 'currency')}</Typography>
             </Box>
             <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-error-soft) 50%, transparent)', border: `1px solid ${mix.error(15)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
               <Typography variant="caption" color="text.secondary">Total Credit</Typography>
-              <Typography variant="h6" fontWeight={800} color="error.main">{formatStatValue(data?.stats?.totalCreditBal, 'currency')}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800 }} color="error.main">{formatStatValue(data?.stats?.totalCreditBal, 'currency')}</Typography>
             </Box>
           </Box>
         )}
@@ -353,7 +411,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           </Box>
         )}
 
-        {(layoutVariant === 'transaction' || layoutVariant === 'settings') && data?.chart && config.showChart && (
+        {(layoutVariant === 'transaction' || layoutVariant === 'settings') && data?.chart && config.showChart && !isOrdersPage && (
           <Box sx={{ mb: 2 }}>
             <DataPanel title={config.chartTitle ?? 'Trend'}>
               <ApexChart data={data.chart} type={config.chartType ?? 'area'} height={240} />
@@ -377,7 +435,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             onExportPdf={() => exportToPdf(rows, config.slug, config.title, exportCols)}
             onPrint={() => printTable(config.title)}
             onRefresh={() => refetch()}
-            showDateFilter={layoutVariant !== 'settings'}
+            showDateFilter={!isOrdersPage && layoutVariant !== 'settings'}
             showStatusFilter={layoutVariant !== 'settings'}
           />
         </Box>
@@ -441,7 +499,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           {selected && config.columns.map((col) => (
             <Box key={col.field} sx={{ display: 'flex', py: 1.25, borderBottom: `1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)` }}>
               <Typography variant="body2" color="text.secondary" sx={{ width: 140, flexShrink: 0 }}>{col.header}</Typography>
-              <Typography variant="body2" fontWeight={500} component="div">
+              <Typography variant="body2" sx={{ fontWeight: 500 }} component="div">
                 {col.type === 'status' ? <StatusChip status={String(selected[col.field])} /> : String(cellValue(selected, col))}
               </Typography>
             </Box>

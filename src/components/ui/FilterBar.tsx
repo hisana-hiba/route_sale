@@ -28,13 +28,14 @@ interface FilterBarProps {
   onRefresh?: () => void
   showDateFilter?: boolean
   showStatusFilter?: boolean
+  showSearch?: boolean
 }
 
 export function FilterBar({
   search, onSearchChange, status, onStatusChange, statuses = [],
   dateFrom, dateTo, onDateFromChange, onDateToChange,
   onExportExcel, onExportPdf, onPrint, onRefresh,
-  showDateFilter = true, showStatusFilter = true,
+  showDateFilter = true, showStatusFilter = true, showSearch = true,
 }: FilterBarProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [extraStatus, setExtraStatus] = useState('')
@@ -60,6 +61,7 @@ export function FilterBar({
         mb: 2,
       }}
     >
+      {showSearch && (
       <TextField
         placeholder="Search records..."
         value={search}
@@ -75,6 +77,7 @@ export function FilterBar({
           startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: v.textMuted }} /></InputAdornment>,
         }}
       />
+      )}
       {showStatusFilter && (
         <TextField
           select

@@ -119,6 +119,34 @@ export function generateChartData(slug: string, points = 12, seriesCount = 2) {
   }
 }
 
+export function generateOrdersChart(records: Record<string, unknown>[]) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const totalByMonth = Array(12).fill(0) as number[]
+  const fallbackK = [45, 52, 38, 65, 48, 55, 72, 68, 51, 85, 42, 60]
+  const refSum = fallbackK.reduce((a, b) => a + b, 0)
+
+  for (const record of records) {
+    const dateStr = String(record.date ?? '')
+    if (!dateStr) continue
+    const d = new Date(dateStr)
+    if (Number.isNaN(d.getTime())) continue
+    totalByMonth[d.getMonth()] += Number(record.amount) || 0
+  }
+
+  const monthsWithData = totalByMonth.filter((v) => v > 0).length
+  const orderTotal = totalByMonth.reduce((a, b) => a + b, 0)
+
+  // Sparse date ranges: scale the reference monthly shape by total order value
+  const data = monthsWithData >= 4
+    ? totalByMonth
+    : fallbackK.map((k) => Math.round((k / refSum) * (orderTotal || refSum * 1000)))
+
+  return {
+    categories: months,
+    series: [{ name: 'Order Value', data }],
+  }
+}
+
 export function computeColumnTotals(records: Record<string, unknown>[], fields: string[]) {
   const totals: Record<string, number> = {}
   for (const field of fields) {
@@ -143,6 +171,18 @@ export function computeStats(records: Record<string, unknown>[], statKeys: strin
     else if (key === 'totalOutstanding') stats.totalOutstanding = records.reduce((s, r) => s + (Number(r.outstanding) || 0), 0)
     else if (key === 'totalDebit') stats.totalDebit = records.reduce((s, r) => s + (Number(r.debit) || 0), 0)
     else if (key === 'totalCreditBal') stats.totalCreditBal = records.reduce((s, r) => s + (Number(r.credit) || 0), 0)
+    else if (key === 'totalRevenue') {
+      stats.totalRevenue = records.reduce((s, r) => s + (Number(r.total) || Number(r.amount) || 0), 0)
+    }
+    else if (key === 'totalExpense') {
+      stats.totalExpense = records.reduce((s, r) => {
+        const tax = Number(r.tax)
+        if (!Number.isNaN(tax) && tax > 0) return s + tax
+        const base = Number(r.amount) || Number(r.total) || 0
+        return s + Math.round(base * 0.18)
+      }, 0)
+    }
+    else if (key === 'totalOrders') stats.totalOrders = records.length
     else stats[key] = amount(10, 500)
   }
   return stats
@@ -254,6 +294,7 @@ function customerRecord(slug: string, i: number) {
     name: customers[i % customers.length], route: pick(routes),
     phone: `+91 ${amount(7000000000, 9999999999)}`,
     address: `${amount(1, 999)} Market Road, City`,
+    shopCategory: pick(['traditional', 'supermarket', 'hypermarket', 'convenience', 'kirana', 'wholesale']),
     creditLimit: limit, outstanding, available: limit - outstanding,
     lastVisit: date(Math.floor(Math.random() * 30)),
     totalPurchases: amount(50000, 2000000), status: outstanding > limit * 0.8 ? 'overdue' : 'active',

@@ -1,9 +1,8 @@
 import { http, HttpResponse, delay } from 'msw'
-import { generateChartData, generateDashboardStats, generateModuleRecords, computeStats, computeColumnTotals } from './data/generators'
+import { generateChartData, generateDashboardStats, generateModuleRecords, computeStats, computeColumnTotals, generateOrdersChart } from './data/generators'
 import { flowHandlers } from './flowHandlers'
-import { shops } from './flowData'
 import { getModuleConfig } from '@/config/modules'
-import type { ListParams } from '@/api/client'
+import type { ModuleListParams } from '@/api/client'
 
 const store = new Map<string, Record<string, unknown>[]>()
 
@@ -14,9 +13,33 @@ function getStore(slug: string) {
   return store.get(slug)!
 }
 
-function filter(records: Record<string, unknown>[], params: ListParams) {
+function parseListParams(url: URL): ModuleListParams {
+  const num = (key: string) => url.searchParams.get(key) || undefined
+  return {
+    page: Number(url.searchParams.get('page') || 1),
+    pageSize: Number(url.searchParams.get('pageSize') || 10),
+    search: num('search'),
+    status: num('status'),
+    dateFrom: num('dateFrom'),
+    dateTo: num('dateTo'),
+    route: num('route'),
+    shopCategory: num('shopCategory'),
+    lastVisitFrom: num('lastVisitFrom'),
+    lastVisitTo: num('lastVisitTo'),
+    creditMin: num('creditMin'),
+    creditMax: num('creditMax'),
+    outstandingMin: num('outstandingMin'),
+    outstandingMax: num('outstandingMax'),
+  }
+}
+
+function filter(records: Record<string, unknown>[], params: ModuleListParams) {
   let result = [...records]
-  const { search, status, dateFrom, dateTo } = params
+  const {
+    search, status, dateFrom, dateTo, route, shopCategory,
+    lastVisitFrom, lastVisitTo, creditMin, creditMax, outstandingMin, outstandingMax,
+  } = params
+
   if (search) {
     const q = search.toLowerCase()
     result = result.filter((r) =>
@@ -24,9 +47,29 @@ function filter(records: Record<string, unknown>[], params: ListParams) {
     )
   }
   if (status) result = result.filter((r) => r.status === status)
-  if (dateFrom) result = result.filter((r) => String(r.date ?? '') >= dateFrom)
-  if (dateTo) result = result.filter((r) => String(r.date ?? '') <= dateTo)
+  if (dateFrom) result = result.filter((r) => String(r.date ?? r.createdAt ?? '').slice(0, 10) >= dateFrom)
+  if (dateTo) result = result.filter((r) => String(r.date ?? r.createdAt ?? '').slice(0, 10) <= dateTo)
+  if (route) result = result.filter((r) => String(r.route) === route)
+  if (shopCategory) result = result.filter((r) => r.shopCategory === shopCategory)
+  if (lastVisitFrom) result = result.filter((r) => String(r.lastVisit ?? '') >= lastVisitFrom)
+  if (lastVisitTo) result = result.filter((r) => String(r.lastVisit ?? '') <= lastVisitTo)
+  if (creditMin) result = result.filter((r) => Number(r.creditLimit) >= Number(creditMin))
+  if (creditMax) result = result.filter((r) => Number(r.creditLimit) <= Number(creditMax))
+  if (outstandingMin) result = result.filter((r) => Number(r.outstanding) >= Number(outstandingMin))
+  if (outstandingMax) result = result.filter((r) => Number(r.outstanding) <= Number(outstandingMax))
   return result
+}
+
+function generateFilteredCustomerChart(records: Record<string, unknown>[], slug: string) {
+  const base = generateChartData(slug, 12, 1)
+  const factor = records.length > 0 ? Math.max(records.length / 70, 0.08) : 0
+  return {
+    ...base,
+    series: base.series.map((s) => ({
+      ...s,
+      data: s.data.map((v) => Math.round(v * factor)),
+    })),
+  }
 }
 
 function paginate<T>(items: T[], page = 1, pageSize = 10) {
@@ -37,25 +80,24 @@ function paginate<T>(items: T[], page = 1, pageSize = 10) {
 export const handlers = [
   ...flowHandlers,
 
-  http.get('/api/customers/top-sales-shops', async () => {
+  http.get('/api/customers/top-sales-shops', async ({ request }) => {
     await delay(300)
-    const salesData = [
-      { sales: 485000, orders: 156, lastOrder: '2 days ago', growth: 18.6 },
-      { sales: 412000, orders: 142, lastOrder: '1 day ago', growth: 12.4 },
-      { sales: 398000, orders: 128, lastOrder: '3 days ago', growth: 9.8 },
-      { sales: 365000, orders: 115, lastOrder: '5 days ago', growth: 7.2 },
-      { sales: 298000, orders: 98, lastOrder: '1 week ago', growth: 5.1 },
-      { sales: 245000, orders: 87, lastOrder: '4 days ago', growth: 3.8 },
-    ]
-    const topShops = shops
-      .map((shop, i) => ({
-        id: shop.id,
-        name: shop.name,
-        category: shop.category,
-        ...salesData[i % salesData.length],
-      }))
-      .sort((a, b) => b.sales - a.sales)
+    const params = parseListParams(new URL(request.url))
+    const filtered = filter(getStore('customers-customer-list'), params)
+    const growthRates = [18.6, 12.4, 9.8, 7.2]
+
+    const topShops = [...filtered]
+      .sort((a, b) => Number(b.totalPurchases) - Number(a.totalPurchases))
       .slice(0, 4)
+      .map((customer, i) => ({
+        id: String(customer.id),
+        name: String(customer.name),
+        sales: Number(customer.totalPurchases) || 0,
+        orders: Number(customer.visits) || 0,
+        lastOrder: String(customer.lastVisit ?? '—'),
+        growth: growthRates[i % growthRates.length],
+      }))
+
     return HttpResponse.json({ topShops })
   }),
 
@@ -124,15 +166,7 @@ export const handlers = [
     if (slug === 'dashboard') return
 
     const config = getModuleConfig(`/${slug.replace(/-/g, '/')}`)
-    const url = new URL(request.url)
-    const listParams: ListParams = {
-      page: Number(url.searchParams.get('page') || 1),
-      pageSize: Number(url.searchParams.get('pageSize') || 10),
-      search: url.searchParams.get('search') || undefined,
-      status: url.searchParams.get('status') || undefined,
-      dateFrom: url.searchParams.get('dateFrom') || undefined,
-      dateTo: url.searchParams.get('dateTo') || undefined,
-    }
+    const listParams = parseListParams(new URL(request.url))
 
     const all = getStore(slug)
     const filtered = filter(all, listParams)
@@ -143,10 +177,18 @@ export const handlers = [
         ? config.columns.filter((c) => c.type === 'currency' || c.type === 'number').map((c) => c.field)
         : [])
 
+    const chart = config.showChart
+      ? (slug === 'sales-orders'
+        ? generateOrdersChart(filtered)
+        : config.layout === 'customer' || config.layout === 'transaction'
+          ? generateFilteredCustomerChart(filtered, slug)
+          : generateChartData(slug, 12, config.layout === 'report' ? 2 : 1))
+      : undefined
+
     return HttpResponse.json({
       ...page,
       stats: computeStats(filtered, statKeys),
-      chart: config.showChart ? generateChartData(slug, 12, config.layout === 'report' ? 2 : 1) : undefined,
+      chart,
       totals: sumFields.length > 0 ? computeColumnTotals(filtered, sumFields) : undefined,
     })
   }),

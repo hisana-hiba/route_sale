@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { ModuleListResponse } from '@/types/module'
+import type { PeriodFilterParams } from '@/types/period'
 
 export const api = axios.create({
   baseURL: '/api',
@@ -15,7 +16,18 @@ export interface ListParams {
   dateTo?: string
 }
 
-export async function fetchList<T>(endpoint: string, params: ListParams = {}): Promise<ModuleListResponse> {
+export type ModuleListParams = ListParams & Partial<PeriodFilterParams> & Partial<{
+  route: string
+  shopCategory: string
+  lastVisitFrom: string
+  lastVisitTo: string
+  creditMin: string
+  creditMax: string
+  outstandingMin: string
+  outstandingMax: string
+}>
+
+export async function fetchList<T>(endpoint: string, params: ModuleListParams = {}): Promise<ModuleListResponse> {
   const { data } = await api.get<ModuleListResponse>(endpoint, { params })
   return data
 }

@@ -1,40 +1,22 @@
 import { Box } from '@mui/material'
-import { v } from '@/theme/cssVars'
+import { statusStyles, type StatusTone } from '@/components/ui/statusStyles'
 
-interface StatusStyle {
-  label: string
-  color: string
-  bg: string
+interface StatusChipProps {
+  status: string
+  size?: 'small' | 'medium'
 }
 
-const statusStyles: Record<string, StatusStyle> = {
-  active: { label: 'Active', color: v.success, bg: v.successSoft },
-  pending: { label: 'Pending', color: '#CA8A04', bg: 'rgba(202, 138, 4, 0.14)' },
-  completed: { label: 'Completed', color: v.success, bg: v.successSoft },
-  confirmed: { label: 'Confirmed', color: v.success, bg: v.successSoft },
-  cancelled: { label: 'Cancelled', color: v.error, bg: v.errorSoft },
-  draft: { label: 'Draft', color: v.textSecondary, bg: 'color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface))' },
-  overdue: { label: 'Overdue', color: v.error, bg: v.errorSoft },
-  low_stock: { label: 'Low Stock', color: v.coral, bg: v.coralSoft },
-  in_transit: { label: 'In Transit', color: v.info, bg: v.infoSoft },
-  delivered: { label: 'Delivered', color: '#16A34A', bg: 'rgba(22, 163, 74, 0.12)' },
-  processing: { label: 'Processing', color: '#EA580C', bg: 'rgba(234, 88, 12, 0.12)' },
-  shipped: { label: 'Shipped', color: '#2563EB', bg: 'rgba(37, 99, 235, 0.12)' },
-  approved: { label: 'Approved', color: v.success, bg: v.successSoft },
-  rejected: { label: 'Rejected', color: v.error, bg: v.errorSoft },
-  idle: { label: 'Idle', color: v.textSecondary, bg: 'color-mix(in srgb, var(--rs-primary) 8%, var(--rs-surface))' },
-  offline: { label: 'Offline', color: v.error, bg: v.errorSoft },
-  checked_in: { label: 'Checked In', color: v.success, bg: v.successSoft },
-  checked_out: { label: 'Checked Out', color: v.info, bg: v.infoSoft },
-  en_route: { label: 'En Route', color: v.warning, bg: v.warningSoft },
-}
-
-export function StatusChip({ status }: { status: string; size?: 'small' | 'medium' }) {
-  const cfg = statusStyles[status] ?? {
+export function StatusChip({ status, size = 'small' }: StatusChipProps) {
+  const key = status.toLowerCase().replace(/\s+/g, '_')
+  const cfg: StatusTone = statusStyles[key] ?? {
     label: status.replace(/_/g, ' '),
-    color: v.textSecondary,
-    bg: v.successSoft,
+    color: '#4B5563',
+    bg: '#F3F4F6',
+    border: 'rgba(75, 85, 99, 0.18)',
+    dot: '#6B7280',
   }
+
+  const isSmall = size === 'small'
 
   return (
     <Box
@@ -42,17 +24,34 @@ export function StatusChip({ status }: { status: string; size?: 'small' | 'mediu
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
-        px: 1.25,
-        py: 0.35,
-        borderRadius: '20px',
+        gap: 0.75,
+        px: isSmall ? 1.15 : 1.4,
+        py: isSmall ? 0.4 : 0.55,
+        borderRadius: '999px',
         bgcolor: cfg.bg,
         color: cfg.color,
-        fontSize: '11px',
+        border: `1px solid ${cfg.border}`,
+        fontSize: isSmall ? '11px' : '12px',
         fontWeight: 600,
+        letterSpacing: '0.01em',
+        lineHeight: 1.2,
         textTransform: 'capitalize',
         whiteSpace: 'nowrap',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
       }}
     >
+      <Box
+        component="span"
+        sx={{
+          width: isSmall ? 6 : 7,
+          height: isSmall ? 6 : 7,
+          borderRadius: '50%',
+          bgcolor: cfg.dot,
+          flexShrink: 0,
+          boxShadow: `0 0 0 3px ${cfg.bg}`,
+        }}
+      />
       {cfg.label}
     </Box>
   )

@@ -9,23 +9,33 @@ interface CustomerFormData {
   customerName: string
   phoneNumber: string
   route: string
-  creditLimit: string
   shopCategory: string
+  creditLimit: string
 }
+
+const SHOP_CATEGORIES = [
+  { value: 'traditional', label: 'Traditional' },
+  { value: 'supermarket', label: 'Supermarket' },
+  { value: 'hypermarket', label: 'Hypermarket' },
+  { value: 'convenience', label: 'Convenience Store' },
+  { value: 'kirana', label: 'Kirana' },
+  { value: 'wholesale', label: 'Wholesale' },
+] as const
 
 interface AddCustomerFormProps {
   onSuccess?: () => void
+  onCancel?: () => void
 }
 
-export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
-  const { control, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<CustomerFormData>({
+export function AddCustomerForm({ onSuccess, onCancel }: AddCustomerFormProps) {
+  const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<CustomerFormData>({
     defaultValues: {
       businessName: '',
       customerName: '',
       phoneNumber: '',
       route: '',
-      creditLimit: '',
       shopCategory: '',
+      creditLimit: '',
     },
   })
 
@@ -42,8 +52,8 @@ export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
         businessName: data.businessName,
         phone: data.phoneNumber,
         route: data.route,
-        creditLimit: parseFloat(data.creditLimit),
         shopCategory: data.shopCategory,
+        creditLimit: parseFloat(data.creditLimit),
       })
 
       setSubmitSuccess(true)
@@ -68,11 +78,14 @@ export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
       { value: 'route-d', label: 'Route D - West' },
       { value: 'route-e', label: 'Route E - Central' },
     ]},
+    {
+      name: 'shopCategory',
+      label: 'Shop Category',
+      type: 'select' as const,
+      required: true,
+      options: [...SHOP_CATEGORIES],
+    },
     { name: 'creditLimit', label: 'Credit Limit', type: 'number' as const, required: true },
-    { name: 'shopCategory', label: 'Shop Category', type: 'select' as const, required: true, options: [
-      { value: 'traditional', label: 'Traditional' },
-      { value: 'supermarket', label: 'Supermarket' },
-    ]},
   ]
 
   return (
@@ -87,7 +100,7 @@ export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
 
         <Grid container spacing={2}>
           {formFields.map((field) => (
-            <Grid key={field.name} item xs={12} sm={6}>
+            <Grid key={field.name} size={{ xs: 12, sm: 6 }}>
               <FormFieldRenderer
                 field={field}
                 control={control}
@@ -102,9 +115,10 @@ export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
             onClick={() => {
               reset()
               setSubmitError(null)
+              onCancel?.()
             }}
           >
-            Clear
+            Cancel
           </Button>
           <Button
             type="submit"

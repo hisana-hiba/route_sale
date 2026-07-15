@@ -181,12 +181,7 @@ function cfg(
         { key: 'totalCredit', label: 'Credit Limit', format: 'currency' },
         { key: 'overdue', label: 'Overdue', format: 'number' },
       ],
-      formFields: [
-        { name: 'name', label: 'Customer Name', type: 'text', required: true },
-        { name: 'route', label: 'Route', type: 'text' },
-        { name: 'creditLimit', label: 'Credit Limit', type: 'number' },
-        { name: 'phone', label: 'Phone', type: 'text' },
-      ],
+      formFields: [],
       chartType: 'area', chartTitle: 'Customer Activity', showChart: true,
     },
     logistics: {
@@ -274,11 +269,40 @@ function cfg(
 const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig>?][] = [
   // Sales
   ['sales-orders', 'Orders', 'transaction', 'sales', { documentedFlow: 'new-order' as const }],
-  ['sales-invoices', 'Invoices', 'transaction', 'invoice', { columns: [
-    { field: 'code', header: 'Invoice', width: 120 }, { field: 'customer', header: 'Customer', flex: 1 },
-    { field: 'date', header: 'Date', type: 'date', width: 110 }, { field: 'dueDate', header: 'Due Date', type: 'date', width: 110 },
-    { field: 'total', header: 'Total', type: 'currency', width: 120 }, { field: 'status', header: 'Status', type: 'status', width: 110 },
-  ]}],
+  ['sales-invoices', 'Invoices', 'transaction', 'invoice', {
+    subtitle: 'Track invoice revenue, expenses, and order status',
+    entityName: 'Invoice',
+    showChart: false,
+    columns: [
+      { field: 'code', header: 'Invoice', width: 120 },
+      { field: 'customer', header: 'Customer', flex: 1 },
+      { field: 'salesman', header: 'Salesman', width: 140 },
+      { field: 'date', header: 'Date', type: 'date', width: 110 },
+      { field: 'dueDate', header: 'Due Date', type: 'date', width: 110 },
+      { field: 'total', header: 'Total', type: 'currency', width: 120 },
+      { field: 'status', header: 'Status', type: 'status', width: 120 },
+    ],
+    stats: [
+      { key: 'totalRevenue', label: 'Total Revenue', format: 'currency' },
+      { key: 'totalExpense', label: 'Total Expense', format: 'currency' },
+      { key: 'totalOrders', label: 'Total Orders', format: 'number' },
+      { key: 'pending', label: 'Pending Orders', format: 'number' },
+    ],
+    formFields: [
+      { name: 'customer', label: 'Customer', type: 'text', required: true },
+      { name: 'salesman', label: 'Salesman', type: 'text', required: true },
+      { name: 'date', label: 'Invoice Date', type: 'date', required: true },
+      { name: 'dueDate', label: 'Due Date', type: 'date', required: true },
+      { name: 'amount', label: 'Amount (₹)', type: 'number', required: true },
+      { name: 'paymentTerms', label: 'Payment Terms', type: 'select', options: [
+        { value: 'Net 7', label: 'Net 7' },
+        { value: 'Net 15', label: 'Net 15' },
+        { value: 'Net 30', label: 'Net 30' },
+        { value: 'COD', label: 'COD' },
+      ]},
+      { name: 'status', label: 'Status', type: 'select', options: statusOptions.invoice.map((v) => ({ value: v, label: v })) },
+    ],
+  }],
   ['sales-sales-return', 'Sales Returns', 'transaction', 'sales', { documentedFlow: 'sales-return' as const }],
   ['sales-credit-notes', 'Credit Notes', 'transaction', 'invoice'],
   ['sales-quotations', 'Quotations', 'transaction', 'sales', { subtitle: 'Create and manage sales quotations' }],

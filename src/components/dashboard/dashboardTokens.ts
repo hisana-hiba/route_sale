@@ -55,9 +55,4 @@ export const quickActionBtn = {
   fontSize: '12px',
 } as const
 
-export const statusPills = {
-  delivered: { label: 'Delivered', color: '#16A34A', bg: 'rgba(22, 163, 74, 0.12)' },
-  processing: { label: 'Processing', color: '#EA580C', bg: 'rgba(234, 88, 12, 0.12)' },
-  shipped: { label: 'Shipped', color: '#2563EB', bg: 'rgba(37, 99, 235, 0.12)' },
-  pending: { label: 'Pending', color: '#CA8A04', bg: 'rgba(202, 138, 4, 0.14)' },
-} as const
+export { statusPills } from '@/components/ui/statusStyles'

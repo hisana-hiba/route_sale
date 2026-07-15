@@ -1,7 +1,9 @@
 import { Box, Typography } from '@mui/material'
 import { dash, kpi, kpiCardThemes } from '@/components/dashboard/dashboardTokens'
 
-function CardWaveLines({ stroke, stroke2, id }: { stroke: string; stroke2: string; id: string }) {
+function CardWaveLines({ stroke, stroke2, id, compact, mini }: { stroke: string; stroke2: string; id: string; compact?: boolean; mini?: boolean }) {
+  const height = mini ? 36 : compact ? 48 : 64
+
   return (
     <Box
       sx={{
@@ -9,7 +11,7 @@ function CardWaveLines({ stroke, stroke2, id }: { stroke: string; stroke2: strin
         left: 0,
         right: 0,
         bottom: 0,
-        height: 64,
+        height,
         pointerEvents: 'none',
         overflow: 'hidden',
         borderRadius: `0 0 ${kpi.radius} ${kpi.radius}`,
@@ -39,13 +41,28 @@ interface DashboardKpiCardProps {
   trendLabel: string
   icon: React.ReactNode
   iconIndex?: number
+  compact?: boolean
+  mini?: boolean
 }
 
+/** Fixed mini card dimensions — visual tokens come from `kpi` / `dash` */
+const miniDims = {
+  padding: '12px',
+  iconSize: 28,
+  iconRadius: '9px',
+  labelSize: '11px',
+  valueSize: '17px',
+  trendSize: '10px',
+  valueMt: '4px',
+  valueMb: '4px',
+} as const
+
 export function DashboardKpiCard({
-  label, value, trend, trendLabel, icon, iconIndex = 0,
+  label, value, trend, trendLabel, icon, iconIndex = 0, compact = false, mini = false,
 }: DashboardKpiCardProps) {
   const isUp = trend >= 0
   const theme = kpiCardThemes[iconIndex % kpiCardThemes.length]
+  const isSmall = mini || compact
 
   return (
     <Box
@@ -56,29 +73,40 @@ export function DashboardKpiCard({
         backdropFilter: 'blur(20px) saturate(120%)',
         WebkitBackdropFilter: 'blur(20px) saturate(120%)',
         boxShadow: kpi.shadow,
-        p: kpi.padding,
-        minHeight: 140,
+        p: mini ? miniDims.padding : compact ? '16px' : kpi.padding,
+        minHeight: mini ? 'auto' : compact ? 108 : 140,
+        height: mini ? '100%' : undefined,
         overflow: 'hidden',
       }}
     >
-      <CardWaveLines stroke={theme.waveStroke} stroke2={theme.waveStroke2} id={`kpi-wave-${iconIndex}`} />
+      <CardWaveLines stroke={theme.waveStroke} stroke2={theme.waveStroke2} id={`kpi-wave-${iconIndex}`} compact={compact && !mini} mini={mini} />
 
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-        <Typography sx={{ color: kpi.labelColor, fontWeight: 500, fontSize: kpi.labelSize, lineHeight: 1.3, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1, gap: 0.75 }}>
+        <Typography
+          sx={{
+            color: kpi.labelColor,
+            fontWeight: 500,
+            fontSize: mini ? miniDims.labelSize : compact ? '12px' : kpi.labelSize,
+            lineHeight: 1.25,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            pr: 0.5,
+          }}
+          noWrap={mini}
+        >
           {label}
         </Typography>
         <Box
           sx={{
-            width: kpi.iconSize,
-            height: kpi.iconSize,
-            borderRadius: kpi.iconRadius,
+            width: mini ? miniDims.iconSize : compact ? 36 : kpi.iconSize,
+            height: mini ? miniDims.iconSize : compact ? 36 : kpi.iconSize,
+            borderRadius: mini ? miniDims.iconRadius : compact ? '10px' : kpi.iconRadius,
             flexShrink: 0,
             bgcolor: theme.iconBg,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: theme.iconColor,
-            '& .MuiSvgIcon-root': { fontSize: 22, color: 'inherit' },
+            '& .MuiSvgIcon-root': { fontSize: mini ? 15 : compact ? 18 : 22, color: 'inherit' },
           }}
         >
           {icon}
@@ -93,20 +121,41 @@ export function DashboardKpiCard({
           fontWeight: 700,
           color: kpi.valueColor,
           letterSpacing: '-0.02em',
-          fontSize: kpi.valueSize,
+          fontSize: mini ? miniDims.valueSize : compact ? '22px' : kpi.valueSize,
           lineHeight: 1.2,
-          mt: '8px',
-          mb: '12px',
+          mt: mini ? miniDims.valueMt : compact ? '6px' : '8px',
+          mb: mini ? miniDims.valueMb : compact ? '8px' : '12px',
         }}
+        noWrap={mini}
       >
         {value}
       </Typography>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', zIndex: 1 }}>
-        <Typography component="span" sx={{ color: isUp ? dash.trendUp : dash.trendDown, fontWeight: 600, fontSize: kpi.trendSize, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', zIndex: 1, minWidth: 0 }}>
+        <Typography
+          component="span"
+          sx={{
+            color: isUp ? dash.trendUp : dash.trendDown,
+            fontWeight: 600,
+            fontSize: mini ? miniDims.trendSize : kpi.trendSize,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            flexShrink: 0,
+          }}
+        >
           {isUp ? '+' : ''}{trend}%
         </Typography>
-        <Typography component="span" sx={{ color: dash.trendMuted, fontSize: kpi.trendSize, fontWeight: 400, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <Typography
+          component="span"
+          sx={{
+            color: dash.trendMuted,
+            fontSize: mini ? miniDims.trendSize : isSmall ? '10px' : kpi.trendSize,
+            fontWeight: 400,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {trendLabel}
         </Typography>
       </Box>

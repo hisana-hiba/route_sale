@@ -1,10 +1,16 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs, { type Dayjs } from 'dayjs'
 import { fetchList, createItem, updateItem, deleteItem } from '@/api/client'
+import type { ModuleListParams } from '@/api/client'
 import type { ModuleConfig, ModuleListResponse } from '@/types/module'
+import type { PeriodFilterParams } from '@/types/period'
 
-export function useModuleData(config: ModuleConfig) {
+export function useModuleData(
+  config: ModuleConfig,
+  periodFilters?: PeriodFilterParams,
+  extraParams?: ModuleListParams,
+) {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
@@ -13,14 +19,20 @@ export function useModuleData(config: ModuleConfig) {
   const [dateFrom, setDateFrom] = useState<Dayjs | null>(null)
   const [dateTo, setDateTo] = useState<Dayjs | null>(null)
 
-  const listParams = useMemo(() => ({
+  const listParams = useMemo<ModuleListParams>(() => ({
     page: page + 1,
     pageSize,
     search: search || undefined,
     status: statusFilter || undefined,
-    dateFrom: dateFrom?.format('YYYY-MM-DD'),
-    dateTo: dateTo?.format('YYYY-MM-DD'),
-  }), [page, pageSize, search, statusFilter, dateFrom, dateTo])
+    dateFrom: dateFrom?.format('YYYY-MM-DD') ?? periodFilters?.dateFrom,
+    dateTo: dateTo?.format('YYYY-MM-DD') ?? periodFilters?.dateTo,
+    ...extraParams,
+  }), [page, pageSize, search, statusFilter, dateFrom, dateTo, periodFilters, extraParams])
+
+  useEffect(() => {
+    setPage(0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodFilters, extraParams])
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['module', config.slug, listParams],
