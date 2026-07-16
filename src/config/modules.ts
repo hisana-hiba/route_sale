@@ -303,12 +303,19 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
       { name: 'status', label: 'Status', type: 'select', options: statusOptions.invoice.map((v) => ({ value: v, label: v })) },
     ],
   }],
-  ['sales-sales-return', 'Sales Returns', 'transaction', 'sales', { documentedFlow: 'sales-return' as const }],
+  ['sales-sales-return', 'Sales Returns', 'transaction', 'sales', { documentedFlow: 'sales-return' as const, showChart: false }],
   ['sales-credit-notes', 'Credit Notes', 'transaction', 'invoice'],
-  ['sales-quotations', 'Quotations', 'transaction', 'sales', { subtitle: 'Create and manage sales quotations' }],
+  ['sales-quotations', 'Quotations', 'transaction', 'sales', {
+    subtitle: 'Create and manage sales quotations',
+    documentedFlow: 'add-quotation' as const,
+    entityName: 'Quotation',
+    formFields: [],
+    showChart: false,
+  }],
   ['sales-billing', 'Billing', 'transaction', 'invoice'],
   ['sales-route-sales', 'Route Sales', 'route', 'route'],
-  ['sales-sales-report', 'Sales Report', 'report', 'sales', {
+  ['sales-sales-report', 'Sales Report', 'report', 'sales',
+     {
     columns: [
       { field: 'code', header: 'Order No.', width: 120 },
       { field: 'customer', header: 'Customer Name', flex: 1 },
@@ -848,7 +855,16 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
   ['route-sales-attendance', 'Attendance', 'hr', 'hr'],
   ['route-sales-customer-visits', 'Customer Visits', 'route', 'route'],
   ['route-sales-gps-tracking', 'GPS Tracking', 'tracking', 'tracking'],
-  ['route-sales-collections', 'Collections', 'ledger', 'ledger'],
+  ['route-sales-collections', 'Collections', 'ledger', 'ledger', {
+    documentedFlow: 'add-collection' as const,
+    entityName: 'Collection',
+    subtitle: 'Record shop collections against pending invoices',
+    formFields: [],
+    stats: [
+      { key: 'totalDebit', label: 'Total Debit', format: 'currency' },
+      { key: 'totalCreditBal', label: 'Total Credit', format: 'currency' },
+    ],
+  }],
   ['route-sales-expenses', 'Expenses', 'ledger', 'ledger', {
     columns: [
       { field: 'code', header: 'Voucher', width: 110 },

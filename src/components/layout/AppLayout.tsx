@@ -58,7 +58,9 @@ const navItemSx = (active: boolean) => ({
 function NavGroup({ item }: { item: NavItem }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(() => item.children?.some((c) => c.path === location.pathname) ?? false)
+  const [open, setOpen] = useState(
+    () => item.children?.some((c) => c.path && location.pathname.startsWith(c.path)) ?? false,
+  )
   const Icon = item.icon
 
   if (item.path) {
@@ -92,7 +94,11 @@ function NavGroup({ item }: { item: NavItem }) {
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List disablePadding>
           {item.children?.map((child) => {
-            const active = location.pathname === child.path
+            const active = Boolean(
+              child.path &&
+              (location.pathname === child.path ||
+                (child.path !== '/' && location.pathname.startsWith(`${child.path}/`))),
+            )
             return (
               <ListItemButton
                 key={child.id}
@@ -151,7 +157,7 @@ export function AppLayout() {
     if (e.key === 'Enter' && searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       if (q.includes('order')) navigate('/sales/orders')
-      else if (q.includes('invoice')) navigate('/sales/invoices')
+      else if (q.includes('invoice')) navigate('/sales/list')
       else if (q.includes('customer')) navigate('/customers/customer-list')
       else if (q.includes('route')) navigate('/route-sales/route-assignment')
       else if (q.includes('product')) navigate('/inventory/product-catalog')

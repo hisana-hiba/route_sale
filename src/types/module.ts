@@ -47,6 +47,8 @@ export type DocumentedFlow =
   | 'sales-return'
   | 'stock-transfer'
   | 'purchase-order'
+  | 'add-collection'
+  | 'add-quotation'
   | 'e-way-bill'
   | 'multi-assign-route'
   | 'live-route'

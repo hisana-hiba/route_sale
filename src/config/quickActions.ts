@@ -19,7 +19,7 @@ export interface QuickAction {
 export const dashboardQuickActions: QuickAction[] = [
   { id: 'order', label: 'Create Order', icon: AddShoppingCartIcon, path: '/sales/orders/new' },
   { id: 'return', label: 'Create Return', icon: AssignmentReturnIcon, path: '/sales/sales-return/new' },
-  { id: 'invoice', label: 'Create Invoice', icon: ReceiptLongIcon, path: '/sales/invoices', openCreate: true },
+  { id: 'invoice', label: 'Create Invoice', icon: ReceiptLongIcon, path: '/sales/entry' },
   { id: 'customer', label: 'Add Customer', icon: PersonAddIcon, path: '/customers/customer-list', openCreate: true },
   { id: 'route', label: 'Allocate Route', icon: RouteIcon, path: '/route-sales/route-assignment' },
   { id: 'stock', label: 'Assign Stock', icon: InventoryIcon, path: '/inventory/stock-allocation' },

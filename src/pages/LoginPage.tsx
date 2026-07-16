@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  Box, Button, TextField, Typography, Paper, Alert, MenuItem, alpha,
+  Box, Button, TextField, Typography, Paper, Alert,
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import SpaIcon from '@mui/icons-material/Spa'
@@ -68,7 +68,16 @@ export function LoginPage() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
           <SpaIcon sx={{ color: colors.secondary, fontSize: 32 }} />
           <Box>
-            <Typography variant="h5" fontWeight={800} sx={{ fontFamily: '"Playfair Display", Georgia, serif', color: colors.primary }}>Route Sales</Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 800,
+                fontFamily: '"Playfair Display", Georgia, serif',
+                color: colors.primary,
+              }}
+            >
+              Route Sales
+            </Typography>
             <Typography variant="caption" color="text.secondary">Web Portal — Sign in</Typography>
           </Box>
         </Box>
@@ -81,7 +90,7 @@ export function LoginPage() {
             onChange={(e) => setMobile(e.target.value)}
             margin="normal"
             required
-            inputProps={{ inputMode: 'numeric' }}
+            slotProps={{ htmlInput: { inputMode: 'numeric' } }}
           />
           <TextField
             fullWidth

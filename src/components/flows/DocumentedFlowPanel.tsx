@@ -9,7 +9,6 @@ import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { apiCall } from '@/api/flowClient'
 import { createItem, fetchList, updateItem } from '@/api/client'
 import { shops, staff, products, appModules, leaveTypes } from '@/mocks/flowData'
@@ -163,7 +162,6 @@ function EWayBillPanel() {
 }
 
 function SalesReturnPanel() {
-  const navigate = useNavigate()
   const [msg, setMsg] = useState('')
 
   const { data: returns = [], refetch } = useQuery({
@@ -182,13 +180,7 @@ function SalesReturnPanel() {
 
   return (
     <Box sx={{ mb: 2 }}>
-      <DataPanel title="Sales Returns" subtitle="Create & approve customer returns — sales/returns flow"
-        actions={
-          <Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => navigate('/sales/sales-return/new')}>
-            New Return
-          </Button>
-        }
-      >
+      <DataPanel title="Sales Returns" subtitle="Create & approve customer returns — sales/returns flow">
         <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
           {[
             { label: 'Total', val: returns.length },
@@ -750,15 +742,29 @@ function PerformancePanel() {
 }
 
 function ProductCatalogPanel() {
-  const { data: catalog = [], refetch } = useQuery({ queryKey: ['products'], queryFn: () => apiCall<typeof products>('/products') })
+  const queryClient = useQueryClient()
+  const { data: catalog = [] } = useQuery({ queryKey: ['products'], queryFn: () => apiCall<typeof products>('/products') })
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
 
-  const save = () => {
-    catalog.push({ id: `p-${Date.now()}`, ...form })
-    setOpen(false)
-    refetch()
-  }
+  const save = useMutation({
+    mutationFn: () =>
+      apiCall('/products', {
+        method: 'POST',
+        body: {
+          ...form,
+          barcode: `8901${String(Date.now()).slice(-9)}`,
+          mrp: Math.round(form.price * 1.15),
+          mop: Math.round(form.price * 1.05),
+          batch: `B-NEW-${new Date().toISOString().slice(5, 7)}${new Date().toISOString().slice(2, 4)}`,
+        },
+      }),
+    onSuccess: () => {
+      setOpen(false)
+      setForm({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -788,7 +794,12 @@ function ProductCatalogPanel() {
           <TextField label="HSN" value={form.hsn} onChange={(e) => setForm((p) => ({ ...p, hsn: e.target.value }))} />
           <TextField label="Stock Qty" type="number" value={form.stockQty} onChange={(e) => setForm((p) => ({ ...p, stockQty: Number(e.target.value) }))} />
         </DialogContent>
-        <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={save}>Save</Button></DialogActions>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => save.mutate()} disabled={!form.name || save.isPending}>
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </DataPanel>
     </Box>

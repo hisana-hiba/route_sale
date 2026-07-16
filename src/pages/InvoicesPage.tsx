@@ -22,6 +22,7 @@ import { DataPanel } from '@/components/ui/DataPanel'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { FormFieldRenderer } from '@/components/module/FormFieldRenderer'
+import { SalesTabs } from '@/components/sales/SalesTabs'
 import { useModuleData, formatStatValue } from '@/hooks/useModuleData'
 import { getModuleConfig } from '@/config/modules'
 import { dashboardGridSpacing } from '@/components/ui/cardStyles'
@@ -69,24 +70,9 @@ export function InvoicesPage() {
     defaultValues: {} as Record<string, string>,
   })
 
-  const openCreate = () => {
-    setIsEdit(false)
-    setSelected(null)
-    const defaults: Record<string, string> = {}
-    config.formFields.forEach((f) => {
-      if (f.type === 'date') defaults[f.name] = new Date().toISOString().split('T')[0]
-      else if (f.name === 'status') defaults[f.name] = 'pending'
-      else if (f.name === 'paymentTerms') defaults[f.name] = 'Net 30'
-      else defaults[f.name] = ''
-    })
-    reset(defaults)
-    setDialogOpen(true)
-  }
-
   useEffect(() => {
     if ((location.state as { openCreate?: boolean })?.openCreate) {
-      openCreate()
-      navigate(location.pathname, { replace: true, state: {} })
+      navigate('/sales/entry', { replace: true })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state])
@@ -172,15 +158,23 @@ export function InvoicesPage() {
 
   return (
     <PageShell
-      title={config.title}
-      subtitle={config.subtitle}
-      breadcrumbs={[{ label: 'Home', path: '/' }, { label: config.title }]}
+      title="Sales List"
+      subtitle="Track invoice revenue, expenses, and order status"
+      breadcrumbs={[{ label: 'Home', path: '/' }, { label: 'Sales', path: '/sales/list' }, { label: 'Sales List' }]}
       actions={
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreate} sx={primaryButtonSx}>
-          Add Invoice
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/sales/entry')}
+          sx={primaryButtonSx}
+        >
+          Sales Entry
         </Button>
       }
     >
+      <SalesTabs />
+
       <Grid container spacing={dashboardGridSpacing} sx={gridSx}>
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -209,7 +203,7 @@ export function InvoicesPage() {
       </Grid>
 
       <DataPanel
-        title="All Invoices"
+        title="All Sales"
         subtitle={`${data?.total ?? 0} total records`}
         noPadding
       >

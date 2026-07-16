@@ -20,8 +20,10 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee'
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { ModuleStatCard } from '@/components/ui/ModuleStatCard'
+import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
 import { OverviewColumnChart } from '@/components/dashboard/OverviewColumnChart'
 import { PeriodFilterPanel } from '@/components/orders/PeriodFilterPanel'
 import { OrderRecordCards } from '@/components/orders/OrderRecordCards'
@@ -36,11 +38,13 @@ import { RouteOrderPerformance } from '@/components/module/RouteOrderPerformance
 import { WarehouseTransferPanel } from '@/components/module/WarehouseTransferPanel'
 import { FormFieldRenderer } from '@/components/module/FormFieldRenderer'
 import { DocumentedFlowPanel } from '@/components/flows/DocumentedFlowPanel'
+import { SalesTabs } from '@/components/sales/SalesTabs'
 import { useModuleData, formatStatValue } from '@/hooks/useModuleData'
 import { exportToExcel, exportToPdf, printTable, formatCurrency } from '@/utils/export'
 import type { ModuleConfig, ColumnDef, ChartType } from '@/types/module'
 import { v, mix } from '@/theme/cssVars'
 import { useAppStore } from '@/store/appStore'
+import { dashboardGridSpacing } from '@/components/ui/cardStyles'
 
 interface ModuleLayoutProps {
   config: ModuleConfig
@@ -60,6 +64,8 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const themeVersion = useAppStore((s) => s.themeVersion)
 
   const isOrdersPage = config.slug === 'sales-orders'
+  const isSalesReturnPage = config.slug === 'sales-sales-return'
+  const isCollectionsPage = config.slug === 'route-sales-collections'
 
   const {
     period: orderPeriod,
@@ -116,6 +122,14 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
     }
     if (config.documentedFlow === 'purchase-order') {
       navigate('/purchase/purchase-orders/new')
+      return
+    }
+    if (config.documentedFlow === 'add-collection') {
+      navigate('/route-sales/collections/new')
+      return
+    }
+    if (config.documentedFlow === 'add-quotation') {
+      navigate('/sales/quotations/new')
       return
     }
     setIsEdit(false); setSelected(null)
@@ -180,21 +194,31 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const orderStatTrends = [12.4, 18.6, -6.3, 9.8]
   const orderStatTrendLabels = ['vs last month', 'vs last month', 'vs last month', 'vs last month']
   const sparkSets = [[40, 55, 45, 70, 60], [30, 50, 40, 65, 55], [80, 75, 70, 72, 68], [35, 45, 50, 55, 60]]
+  const collectionKpiMeta = [
+    { icon: CurrencyRupeeIcon, trend: 12.4, iconIndex: 0 },
+    { icon: AccountBalanceWalletIcon, trend: 8.6, iconIndex: 1 },
+  ] as const
 
   return (
     <PageShell
       title={config.title}
       subtitle={config.subtitle}
-      breadcrumbs={[{ label: 'Home', path: '/' }, { label: config.title }]}
+      breadcrumbs={
+        isSalesReturnPage
+          ? [{ label: 'Home', path: '/' }, { label: 'Sales', path: '/sales/list' }, { label: config.title }]
+          : [{ label: 'Home', path: '/' }, { label: config.title }]
+      }
       actions={
-        config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' ? (
+        config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation' ? (
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
-            {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : `Add ${config.entityName}`}
+            {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
           </Button>
         ) : undefined
       }
     >
-      {config.documentedFlow && config.documentedFlow !== 'new-order' && config.documentedFlow !== 'stock-transfer' && config.documentedFlow !== 'purchase-order' && (
+      {isSalesReturnPage && <SalesTabs />}
+
+      {config.documentedFlow && config.documentedFlow !== 'new-order' && config.documentedFlow !== 'stock-transfer' && config.documentedFlow !== 'purchase-order' && config.documentedFlow !== 'add-collection' && config.documentedFlow !== 'add-quotation' && (
         <DocumentedFlowPanel flow={config.documentedFlow} />
       )}
 
@@ -223,6 +247,25 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           chart={data?.chart}
           loading={isLoading}
         />
+      ) : isCollectionsPage ? (
+        <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing }}>
+          {config.stats.map((stat, i) => {
+            const meta = collectionKpiMeta[i % collectionKpiMeta.length]
+            const Icon = meta.icon
+            return (
+              <Grid key={stat.key} size={{ xs: 12, sm: 6 }}>
+                <DashboardKpiCard
+                  label={stat.label}
+                  value={isLoading ? '—' : formatStatValue(data?.stats?.[stat.key], stat.format)}
+                  trend={meta.trend}
+                  trendLabel="vs last month"
+                  icon={<Icon />}
+                  iconIndex={meta.iconIndex}
+                />
+              </Grid>
+            )
+          })}
+        </Grid>
       ) : (
       <Grid container spacing={1.5} sx={{ mb: 2 }}>
           {config.stats.map((stat, i) => {
@@ -390,7 +433,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           </Grid>
         )}
 
-        {layoutVariant === 'ledger' && (
+        {layoutVariant === 'ledger' && !isCollectionsPage && (
           <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Box sx={{ flex: 1, minWidth: 200, p: 2, borderRadius: '16px', bgcolor: 'color-mix(in srgb, var(--rs-success-soft) 50%, transparent)', border: `1px solid ${mix.success(20)}`, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
               <Typography variant="caption" color="text.secondary">Total Debit</Typography>

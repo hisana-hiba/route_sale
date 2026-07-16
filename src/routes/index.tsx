@@ -9,12 +9,23 @@ import { NewOrderWizard } from '@/components/flows/NewOrderWizard'
 import { SalesReturnWizard } from '@/components/flows/SalesReturnWizard'
 import { CreateStockTransferPage } from '@/components/flows/CreateStockTransferPage'
 import { CreatePurchaseOrderPage } from '@/components/flows/CreatePurchaseOrderPage'
+import { SalesEntryPage } from '@/pages/sales/SalesEntryPage'
+import { SalePriceEntryPage } from '@/pages/sales/SalePriceEntryPage'
+import { CollectionFormPage } from '@/pages/collections/CollectionFormPage'
+import { QuotationFormPage } from '@/pages/quotations/QuotationFormPage'
 import { ProtectedRoute } from './ProtectedRoute'
 import { allRoutes } from './navigation'
 
 export function AppRoutes() {
   const moduleRoutes = allRoutes.filter(
-    (item) => item.path && item.path !== '/' && item.path !== '/customers/customer-list' && item.path !== '/sales/invoices',
+    (item) =>
+      item.path &&
+      item.path !== '/' &&
+      item.path !== '/customers/customer-list' &&
+      item.path !== '/sales/invoices' &&
+      item.path !== '/sales/list' &&
+      item.path !== '/sales/entry' &&
+      item.path !== '/sales/sale-price-entry',
   )
 
   return (
@@ -29,9 +40,14 @@ export function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="customers/customer-list" element={<CustomersPage />} />
-        <Route path="sales/invoices" element={<InvoicesPage />} />
+        <Route path="sales/list" element={<InvoicesPage />} />
+        <Route path="sales/invoices" element={<Navigate to="/sales/list" replace />} />
+        <Route path="sales/entry" element={<SalesEntryPage />} />
+        <Route path="sales/sale-price-entry" element={<SalePriceEntryPage />} />
         <Route path="sales/orders/new" element={<NewOrderWizard />} />
         <Route path="sales/sales-return/new" element={<SalesReturnWizard />} />
+        <Route path="route-sales/collections/new" element={<CollectionFormPage />} />
+        <Route path="sales/quotations/new" element={<QuotationFormPage />} />
         <Route path="stock-management/stock-transfer/new" element={<CreateStockTransferPage />} />
         <Route path="purchase/purchase-orders/new" element={<CreatePurchaseOrderPage />} />
         {moduleRoutes.map((item) => (

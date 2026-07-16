@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import {
-  demoAccounts, shops, products, staff, defaultPermissions, leaveTypes,
+  demoAccounts, shops, products, staff, defaultPermissions, leaveTypes, salesSchemes,
 } from './flowData'
 
 const orders: Record<string, unknown>[] = []
@@ -97,6 +97,33 @@ export const flowHandlers = [
   http.get('/api/v1/products', async () => {
     await delay(200)
     return HttpResponse.json({ success: true, data: products })
+  }),
+
+  http.post('/api/v1/products', async ({ request }) => {
+    await delay(250)
+    const body = (await request.json()) as Partial<(typeof products)[number]>
+    const price = Number(body.price) || 0
+    const product = {
+      id: `p-${Date.now()}`,
+      name: body.name ?? 'New Product',
+      category: body.category ?? 'General',
+      price,
+      gstRate: Number(body.gstRate) || 5,
+      hsn: body.hsn ?? '',
+      unit: body.unit ?? 'pkt',
+      stockQty: Number(body.stockQty) || 0,
+      barcode: body.barcode || `8901${String(Date.now()).slice(-9)}`,
+      mrp: Number(body.mrp) || Math.round(price * 1.15),
+      mop: Number(body.mop) || Math.round(price * 1.05),
+      batch: body.batch || `B-NEW-${new Date().toISOString().slice(2, 7).replace('-', '')}`,
+    }
+    products.push(product)
+    return HttpResponse.json({ success: true, data: product })
+  }),
+
+  http.get('/api/v1/sales-schemes', async () => {
+    await delay(150)
+    return HttpResponse.json({ success: true, data: salesSchemes.filter((s) => s.active) })
   }),
 
   http.get('/api/v1/users', async () => {
