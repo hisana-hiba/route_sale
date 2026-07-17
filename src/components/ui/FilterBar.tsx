@@ -73,8 +73,10 @@ export function FilterBar({
           maxWidth: 320,
           '& .MuiOutlinedInput-root': inputRootSx,
         }}
-        InputProps={{
-          startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: v.textMuted }} /></InputAdornment>,
+        slotProps={{
+          input: {
+            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: v.textMuted }} /></InputAdornment>,
+          },
         }}
       />
       )}

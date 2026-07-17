@@ -29,7 +29,7 @@ export function ReportTotalsBar({ columns, totals, sumFields }: ReportTotalsBarP
         borderTop: `1px solid ${v.border}`,
       }}
     >
-      <Typography variant="caption" fontWeight={700} sx={{ color: v.textPrimary, alignSelf: 'center' }}>
+      <Typography variant="caption" sx={{ fontWeight: 700, color: v.textPrimary, alignSelf: 'center' }}>
         Totals:
       </Typography>
       {sumFields.map((field) => {
@@ -38,7 +38,7 @@ export function ReportTotalsBar({ columns, totals, sumFields }: ReportTotalsBarP
         return (
           <Box key={field} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Typography variant="caption" sx={{ color: v.textSecondary }}>{col.header}:</Typography>
-            <Typography variant="caption" fontWeight={800} sx={{ color: v.primary }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: v.primary }}>
               {formatTotal(totals[field] ?? 0, col.type)}
             </Typography>
           </Box>

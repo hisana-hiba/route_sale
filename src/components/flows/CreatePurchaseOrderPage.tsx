@@ -175,7 +175,7 @@ export function CreatePurchaseOrderPage() {
               label="Order Date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
@@ -185,7 +185,7 @@ export function CreatePurchaseOrderPage() {
               label="Expected Delivery"
               value={expectedDate}
               onChange={(e) => setExpectedDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>

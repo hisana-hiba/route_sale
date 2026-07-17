@@ -23,7 +23,7 @@ export function ImageUploadField({ value, onChange, label, helperText }: ImageUp
   return (
     <Box>
       {label && (
-        <Typography variant="body2" fontWeight={600} sx={{ mb: 0.75 }}>{label}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.75 }}>{label}</Typography>
       )}
       <Box
         sx={{
@@ -53,7 +53,7 @@ export function ImageUploadField({ value, onChange, label, helperText }: ImageUp
             Choose Image
           </Button>
           {helperText && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
               {helperText}
             </Typography>
           )}

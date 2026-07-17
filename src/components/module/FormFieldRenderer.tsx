@@ -41,7 +41,7 @@ export function FormFieldRenderer<T extends FieldValues>({ field, control, setVa
               value={formField.value || '—'}
               fullWidth
               size="small"
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
               helperText={field.helperText}
             />
           )

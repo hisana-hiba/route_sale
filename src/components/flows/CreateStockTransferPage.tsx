@@ -179,7 +179,7 @@ export function CreateStockTransferPage() {
               label="Transfer Date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>

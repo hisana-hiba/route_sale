@@ -14,7 +14,7 @@ interface Salesman {
 
 export function TopSalesmenList({ salesmen }: { salesmen: Salesman[] }) {
   return (
-    <DashboardPanel title="Top Salesmen" variant="cream">
+    <DashboardPanel title="Top Salesmen">
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
         {salesmen.map((s, i) => (
           <Box

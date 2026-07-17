@@ -511,7 +511,7 @@ export function SalesEntryPage() {
                   value={invoiceDate}
                   fullWidth
                   size="small"
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                   InputProps={{ readOnly: true }}
                   sx={readonlyFieldSx}
                 />

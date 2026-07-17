@@ -101,11 +101,17 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
     ? data.series[0]?.data ?? []
     : data.series
 
-  const labels = type === 'donut' ? data.categories : undefined
+  const chartOptions = useMemo(() => {
+    const opts = { ...options }
+    if (type === 'donut') {
+      opts.labels = data.categories
+    }
+    return opts
+  }, [options, type, data.categories])
 
   return (
     <Chart
-      options={{ ...options, labels }}
+      options={chartOptions}
       series={type === 'donut' ? series as unknown as number[] : series}
       type={chartType}
       height={height}
