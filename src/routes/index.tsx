@@ -23,6 +23,15 @@ import { RouteAssignmentPage } from '@/pages/route/RouteAssignmentPage'
 import { TodayRoutePage } from '@/pages/route/TodayRoutePage'
 import { WeeklySchedulePage } from '@/pages/route/WeeklySchedulePage'
 
+// Accounting Standalone Pages
+import { AccountPage } from '@/pages/accounts/AccountPage'
+import { TransactionsPage } from '@/pages/accounts/TransactionsPage'
+import { PaymentPage } from '@/pages/accounts/PaymentPage'
+import { ReceiptPage } from '@/pages/accounts/ReceiptPage'
+import { JournalPage } from '@/pages/accounts/JournalPage'
+import { ProfitLossPage } from '@/pages/accounts/ProfitLossPage'
+import { BalanceSheetPage } from '@/pages/accounts/BalanceSheetPage'
+
 export function AppRoutes() {
   const moduleRoutes = allRoutes.filter(
     (item) =>
@@ -36,7 +45,18 @@ export function AppRoutes() {
       item.path !== '/route-sales/dashboard' &&
       item.path !== '/route-sales/route-assignment' &&
       item.path !== '/route-sales/todays-routes' &&
-      item.path !== '/route-sales/weekly-schedule',
+      item.path !== '/route-sales/weekly-schedule' &&
+      item.path !== '/accounting/accounts' &&
+      item.path !== '/accounting/transactions' &&
+      item.path !== '/accounting/day-book' &&
+      item.path !== '/accounting/cash-book' &&
+      item.path !== '/accounting/bank-book' &&
+      item.path !== '/accounting/general-ledger' &&
+      item.path !== '/accounting/payment' &&
+      item.path !== '/accounting/receipt' &&
+      item.path !== '/accounting/journal' &&
+      item.path !== '/accounting/profit-loss' &&
+      item.path !== '/accounting/balance-sheet',
   )
 
   return (
@@ -68,6 +88,19 @@ export function AppRoutes() {
         <Route path="route-sales/route-assignment" element={<RouteAssignmentPage />} />
         <Route path="route-sales/todays-routes" element={<TodayRoutePage />} />
         <Route path="route-sales/weekly-schedule" element={<WeeklySchedulePage />} />
+
+        {/* Accounting stand-alone custom pages */}
+        <Route path="accounting/accounts" element={<AccountPage />} />
+        <Route path="accounting/transactions" element={<TransactionsPage />} />
+        <Route path="accounting/day-book" element={<TransactionsPage defaultTab="day-book" title="Day Book" />} />
+        <Route path="accounting/cash-book" element={<TransactionsPage defaultTab="cash-book" title="Cash Book" />} />
+        <Route path="accounting/general-ledger" element={<TransactionsPage defaultTab="general-ledger" title="General Ledger" />} />
+        <Route path="accounting/bank-book" element={<TransactionsPage defaultTab="bank-book" title="Bank Book" />} />
+        <Route path="accounting/payment" element={<PaymentPage />} />
+        <Route path="accounting/receipt" element={<ReceiptPage />} />
+        <Route path="accounting/journal" element={<JournalPage />} />
+        <Route path="accounting/profit-loss" element={<ProfitLossPage />} />
+        <Route path="accounting/balance-sheet" element={<BalanceSheetPage />} />
 
         {moduleRoutes.map((item) => (
           <Route key={item.path} path={item.path!.replace(/^\//, '')} element={<ModulePage />} />
