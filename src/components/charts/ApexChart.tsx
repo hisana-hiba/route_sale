@@ -11,7 +11,7 @@ interface ApexChartProps {
   data: ChartData
   type?: 'line' | 'bar' | 'area' | 'donut' | 'pie'
   height?: number
-  yAxisFormat?: 'K' | 'L'
+  yAxisFormat?: 'K' | 'L' | 'number'
 }
 
 export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K' }: ApexChartProps) {
@@ -30,6 +30,7 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
       fontFamily: theme.typography.fontFamily,
       animations: { enabled: true, speed: 800, animateGradually: { enabled: true } },
       sparkline: { enabled: false },
+      parentHeightOffset: 0,
     },
     colors: type === 'bar'
       ? [tokens.primary || '#1A2E25', tokens.warning || '#EA580C']
@@ -37,9 +38,9 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
         ? [tokens.primary || '#1A2E25']
         : [tokens.primary || '#1A2E25', tokens.secondary || '#D4A745', tokens.info || '#2563EB', tokens.success || '#16A34A'],
     dataLabels: { enabled: false },
-    stroke: { 
+    stroke: {
       show: true,
-      curve: 'smooth', 
+      curve: 'smooth',
       width: type === 'bar' ? 2 : 2.5,
       colors: type === 'bar' ? ['transparent'] : undefined
     },
@@ -67,6 +68,7 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
         formatter: (v) => {
           const val = Number(v)
           if (isNaN(val)) return ''
+          if (yAxisFormat === 'number') return new Intl.NumberFormat('en-IN').format(val)
           if (val === 0) return '₹0'
           if (yAxisFormat === 'L') return `₹${(val / 100000).toFixed(0)}L`
           return `₹${(val / 1000).toFixed(0)}K`
@@ -76,18 +78,25 @@ export function ApexChart({ data, type = 'area', height = 300, yAxisFormat = 'K'
     grid: {
       borderColor: tokens.border || '#e5e7eb',
       strokeDashArray: 4,
+      padding: { top: 8, right: 12, bottom: 0, left: 8 },
       xaxis: { lines: { show: false } },
     },
     legend: {
+      show: (data?.series?.length ?? 0) > 1,
       position: 'top', horizontalAlign: 'right',
       labels: { colors: tokens.textPrimary },
     },
     tooltip: {
       theme: mode,
       style: { fontSize: '12px' },
-      y: { formatter: (v) => `₹${Number(v).toLocaleString('en-IN')}` },
+      y: {
+        formatter: (v) =>
+          yAxisFormat === 'number'
+            ? new Intl.NumberFormat('en-IN').format(Number(v))
+            : `₹${Number(v).toLocaleString('en-IN')}`,
+      },
     },
-  }), [data?.categories, theme, chartType, type, mode, tokens, yAxisFormat])
+  }), [data?.categories, data?.series?.length, theme, chartType, type, mode, tokens, yAxisFormat])
 
   if (!data || !data.series || data.series.length === 0) {
     return (

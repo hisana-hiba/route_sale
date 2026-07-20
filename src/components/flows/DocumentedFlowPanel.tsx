@@ -19,6 +19,7 @@ import { formatCurrency } from '@/utils/export'
 import { colors } from '@/theme/palette'
 import type { DocumentedFlow } from '@/types/module'
 import { ThemeSettingsPanel } from '@/components/settings/ThemeSettingsPanel'
+import { NotificationsListPanel } from '@/components/settings/NotificationsListPanel'
 
 interface FlowPanelProps {
   flow: DocumentedFlow
@@ -31,6 +32,7 @@ export function DocumentedFlowPanel({ flow }: FlowPanelProps) {
     case 'sales-return': return <SalesReturnPanel />
     case 'e-way-bill': return <EWayBillPanel />
     case 'theme-settings': return <ThemeSettingsPanel />
+    case 'notifications': return <NotificationsListPanel />
     case 'multi-assign-route': return <MultiAssignRoutePanel />
     case 'live-route': return <LiveRoutePanel />
     case 'weekly-schedule': return <WeeklySchedulePanel />
@@ -496,11 +498,36 @@ function EmployeeDirectoryPanel() {
     queryFn: () => apiCall<Record<string, unknown>[]>('/users'),
   })
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', department: 'Field', role: 'salesman' })
+  const [form, setForm] = useState({
+    code: '',
+    name: '',
+    department: 'Sales',
+    phone: '',
+    emergencyContact: '',
+    address: '',
+    district: '',
+    role: 'salesman',
+    proof: '',
+    category: 'Permanent',
+    admin: 'No',
+  })
 
   const add = () => {
     employees.unshift({ id: `u-${Date.now()}`, ...form, status: 'active' })
     setOpen(false)
+    setForm({
+      code: '',
+      name: '',
+      department: 'Sales',
+      phone: '',
+      emergencyContact: '',
+      address: '',
+      district: '',
+      role: 'salesman',
+      proof: '',
+      category: 'Permanent',
+      admin: 'No',
+    })
     refetch()
   }
 
@@ -510,20 +537,70 @@ function EmployeeDirectoryPanel() {
       actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>Add Employee</Button>}
     >
       <Table size="small">
-        <TableHead><TableRow><TableCell>Name</TableCell><TableCell>Department</TableCell><TableCell>Role</TableCell><TableCell>Status</TableCell></TableRow></TableHead>
+        <TableHead>
+          <TableRow>
+            <TableCell>Employee ID</TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>Department</TableCell>
+            <TableCell>Phone</TableCell>
+            <TableCell>Role</TableCell>
+            <TableCell>Category</TableCell>
+            <TableCell>Admin</TableCell>
+            <TableCell>Status</TableCell>
+          </TableRow>
+        </TableHead>
         <TableBody>
           {employees.map((e) => (
-            <TableRow key={String(e.id)}><TableCell>{String(e.name)}</TableCell><TableCell>{String(e.department)}</TableCell><TableCell>{String(e.role)}</TableCell><TableCell><StatusChip status={String(e.status)} /></TableCell></TableRow>
+            <TableRow key={String(e.id)}>
+              <TableCell>{String(e.code ?? e.id)}</TableCell>
+              <TableCell>{String(e.name)}</TableCell>
+              <TableCell>{String(e.department)}</TableCell>
+              <TableCell>{String(e.phone ?? '—')}</TableCell>
+              <TableCell>{String(e.role)}</TableCell>
+              <TableCell>{String(e.category ?? '—')}</TableCell>
+              <TableCell>{String(e.admin ?? '—')}</TableCell>
+              <TableCell><StatusChip status={String(e.status)} /></TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Add Employee</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-          <TextField label="Department" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} />
-          <TextField select label="Role" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>
-            {['salesman', 'deliveryAgent', 'manager', 'admin'].map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+          <TextField label="Employee ID" value={form.code} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))} required />
+          <TextField label="Employee Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
+          <TextField select label="Department" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} required>
+            {['Sales', 'Logistics', 'Accounts', 'HR', 'Inventory', 'Admin'].map((d) => <MenuItem key={d} value={d}>{d}</MenuItem>)}
+          </TextField>
+          <TextField label="Phone" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
+          <TextField label="Emergency Contact No." value={form.emergencyContact} onChange={(e) => setForm((p) => ({ ...p, emergencyContact: e.target.value }))} required />
+          <TextField label="Address" value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} multiline rows={2} required />
+          <TextField label="District" value={form.district} onChange={(e) => setForm((p) => ({ ...p, district: e.target.value }))} required />
+          <TextField select label="Role" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))} required>
+            {[
+              { value: 'salesman', label: 'Salesman' },
+              { value: 'deliveryAgent', label: 'Delivery Agent' },
+              { value: 'manager', label: 'Manager' },
+              { value: 'admin', label: 'Admin' },
+              { value: 'accountant', label: 'Accountant' },
+              { value: 'storeKeeper', label: 'Store Keeper' },
+            ].map((r) => <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>)}
+          </TextField>
+          <TextField
+            label="Proof"
+            type="file"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { accept: 'image/*,.pdf' } }}
+            onChange={(e) => {
+              const file = (e.target as HTMLInputElement).files?.[0]
+              setForm((p) => ({ ...p, proof: file ? file.name : '' }))
+            }}
+            helperText={form.proof ? `Selected: ${form.proof}` : 'Upload ID / document proof'}
+          />
+          <TextField select label="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
+            {['Permanent', 'Contract', 'Temporary', 'Intern'].map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+          </TextField>
+          <TextField select label="Admin" value={form.admin} onChange={(e) => setForm((p) => ({ ...p, admin: e.target.value }))}>
+            {['Yes', 'No'].map((a) => <MenuItem key={a} value={a}>{a}</MenuItem>)}
           </TextField>
         </DialogContent>
         <DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" color="primary" sx={primaryButtonSx} onClick={add}>Save</Button></DialogActions>

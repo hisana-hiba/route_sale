@@ -183,6 +183,14 @@ export function computeStats(records: Record<string, unknown>[], statKeys: strin
       }, 0)
     }
     else if (key === 'totalOrders') stats.totalOrders = records.length
+    else if (key === 'totalIncentiveEarned') stats.totalIncentiveEarned = records.reduce((s, r) => s + (Number(r.incentiveEarned) || 0), 0)
+    else if (key === 'avgAchievement') {
+      stats.avgAchievement = records.length
+        ? Math.round(records.reduce((s, r) => s + (Number(r.achievementPercent) || 0), 0) / records.length)
+        : 0
+    }
+    else if (key === 'targetMet') stats.targetMet = records.filter((r) => Number(r.achievementPercent) >= 100).length
+    else if (key === 'rejected') stats.rejected = records.filter((r) => r.status === 'rejected').length
     else stats[key] = amount(10, 500)
   }
   return stats
@@ -215,6 +223,28 @@ function invoice(slug: string, i: number) {
   }
 }
 
+function purchaseReturnRecord(_slug: string, i: number) {
+  const product = products[i % products.length]
+  const quantity = amount(1, 80)
+  const unitPrice = amount(25, 450)
+  const amt = quantity * unitPrice
+  const returnReasons = ['Damaged Goods', 'Expired Batch', 'Wrong Item Supplied', 'Quality Issue', 'Excess Stock']
+  return {
+    id: nextId(),
+    code: `PR-${String(i + 1).padStart(5, '0')}`,
+    supplier: pick(suppliers),
+    product,
+    invoice: `PI-${String(amount(1000, 9999))}`,
+    quantity,
+    amount: amt,
+    reason: pick(returnReasons),
+    date: date(Math.floor(Math.random() * 45)),
+    status: pick(statuses.purchase),
+    warehouse: pick(warehouses),
+    createdAt: new Date().toISOString(),
+  }
+}
+
 function purchaseRecord(_slug: string, i: number) {
   const itemCount = amount(2, 6)
   const selectedProducts = Array.from({ length: itemCount }, (_, j) => products[(i + j) % products.length])
@@ -222,12 +252,14 @@ function purchaseRecord(_slug: string, i: number) {
   const totalQuantity = quantities.reduce((sum, q) => sum + q, 0)
   const unitPrices = selectedProducts.map(() => amount(20, 500))
   const amt = quantities.reduce((sum, q, idx) => sum + q * unitPrices[idx], 0)
+  const credit = Math.round(amt * (amount(15, 75) / 100))
   return {
     id: nextId(), code: `PO-${String(i + 1).padStart(5, '0')}`,
     supplier: pick(suppliers), date: date(Math.floor(Math.random() * 60)),
     productList: selectedProducts.join(', '),
     totalQuantity,
     amount: amt,
+    credit,
     items: itemCount,
     status: pick(statuses.purchase),
     warehouse: pick(warehouses), expectedDate: date(-amount(3, 14)),
@@ -272,12 +304,214 @@ function routeRecord(slug: string, i: number) {
   }
 }
 
+const INCENTIVE_ROLES = ['Salesman', 'Delivery Agent', 'Driver', 'Manager'] as const
+const INCENTIVE_ROLE_BASE: Record<string, number> = {
+  Salesman: 15000,
+  'Delivery Agent': 8000,
+  Driver: 6000,
+  Manager: 20000,
+}
+
+export function calculateIncentive(role: string, target: number, achieved: number) {
+  const safeTarget = Math.max(target, 1)
+  const achievementPercent = Math.round((achieved / safeTarget) * 100)
+  const base = INCENTIVE_ROLE_BASE[role] ?? 10000
+  let incentiveEarned = 0
+  if (achievementPercent >= 100) {
+    incentiveEarned = Math.round(base * (1 + (achievementPercent - 100) / 200))
+  } else if (achievementPercent >= 70) {
+    incentiveEarned = Math.round(base * (achievementPercent / 100))
+  }
+  return { achievementPercent, incentiveEarned }
+}
+
+function incentiveRecord(_slug: string, i: number) {
+  const roleProfiles = [
+    { name: 'Rahul Sharma', role: 'Salesman', employeeId: 'EMP-0001' },
+    { name: 'Priya Patel', role: 'Salesman', employeeId: 'EMP-0002' },
+    { name: 'Vikram Singh', role: 'Delivery Agent', employeeId: 'EMP-0005' },
+    { name: 'Anita Desai', role: 'Driver', employeeId: 'EMP-0006' },
+    { name: 'Rajesh Gupta', role: 'Manager', employeeId: 'EMP-0007' },
+    { name: 'Kavita Nair', role: 'Salesman', employeeId: 'EMP-0008' },
+  ]
+  const profile = roleProfiles[i % roleProfiles.length]
+  const months = ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026']
+  const target = roleProfiles[i % roleProfiles.length].role === 'Manager'
+    ? amount(800000, 1500000)
+    : roleProfiles[i % roleProfiles.length].role === 'Salesman'
+      ? amount(200000, 600000)
+      : roleProfiles[i % roleProfiles.length].role === 'Delivery Agent'
+        ? amount(80, 200)
+        : amount(40, 120)
+  const variance = amount(65, 135) / 100
+  const achieved = Math.round(target * variance)
+  const { achievementPercent, incentiveEarned } = calculateIncentive(profile.role, target, achieved)
+  return {
+    id: nextId(),
+    code: `INC-${String(i + 1).padStart(5, '0')}`,
+    employeeId: profile.employeeId,
+    name: profile.name,
+    role: profile.role,
+    period: months[i % months.length],
+    target,
+    achieved,
+    achievementPercent,
+    incentiveEarned,
+    status: pick(['pending', 'approved', 'completed'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+export function calculateAchievementPercent(targetValue: number, achievedValue: number) {
+  const safeTarget = Math.max(targetValue, 1)
+  return Math.round((achievedValue / safeTarget) * 100)
+}
+
+function salesTargetRecord(_slug: string, i: number) {
+  const targetTypes = ['Sales', 'Delivery', 'Collection', 'Performance', 'Route Coverage']
+  const targetNames = [
+    'Monthly Sales Target',
+    'Route Collection Goal',
+    'Delivery Completion Target',
+    'New Outlet Acquisition',
+    'Team Performance Goal',
+  ]
+  const teams = [
+    'Rahul Sharma',
+    'Priya Patel',
+    'North Route Team',
+    'South Route Team',
+    'Logistics Team A',
+  ]
+  const targetType = targetTypes[i % targetTypes.length]
+  const targetValue = targetType === 'Sales' || targetType === 'Collection'
+    ? amount(200000, 800000)
+    : targetType === 'Delivery'
+      ? amount(80, 200)
+      : amount(50, 150)
+  const achievedValue = Math.round(targetValue * (amount(55, 130) / 100))
+  const startOffset = amount(30, 90)
+  const startDate = date(startOffset)
+  const endDateObj = new Date(startDate)
+  endDateObj.setDate(endDateObj.getDate() + amount(28, 31))
+  const endDate = endDateObj.toISOString().split('T')[0]
+  return {
+    id: nextId(),
+    code: `TGT-${String(i + 1).padStart(5, '0')}`,
+    targetName: targetNames[i % targetNames.length],
+    assignee: teams[i % teams.length],
+    targetType,
+    targetValue,
+    achievedValue,
+    achievementPercent: calculateAchievementPercent(targetValue, achievedValue),
+    startDate,
+    endDate,
+    status: pick(['active', 'pending', 'completed'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function leaveRecord(_slug: string, i: number) {
+  const emp = employees[i % employees.length]
+  const leaveTypes = ['Casual', 'Sick', 'Earned', 'Unpaid']
+  const managers = ['Rajesh Gupta', 'Sneha Reddy', 'Anita Desai', 'Priya Patel']
+  const fromOffset = amount(1, 30)
+  const duration = amount(1, 5)
+  const fromDate = date(fromOffset)
+  const toDateObj = new Date(fromDate)
+  toDateObj.setDate(toDateObj.getDate() + duration - 1)
+  const toDate = toDateObj.toISOString().split('T')[0]
+  const totalDays = duration
+  return {
+    id: nextId(),
+    code: `LR-${String(i + 1).padStart(5, '0')}`,
+    employeeId: `EMP-${String((i % employees.length) + 1).padStart(4, '0')}`,
+    name: emp.name,
+    leaveType: leaveTypes[i % leaveTypes.length],
+    fromDate,
+    toDate,
+    totalDays,
+    appliedDate: date(fromOffset + amount(1, 5)),
+    reportingManager: pick(managers),
+    status: pick(['pending', 'approved', 'rejected'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function roleRecord(_slug: string, i: number) {
+  const roles = [
+    { name: 'Admin', description: 'Full system access and configuration' },
+    { name: 'Manager', description: 'Team oversight, reports, and approvals' },
+    { name: 'Salesman', description: 'Sales orders, collections, and route visits' },
+    { name: 'Delivery Agent', description: 'Deliveries, dispatch, and stock allocation' },
+    { name: 'Accountant', description: 'Accounting, ledger, and financial reports' },
+  ]
+  const role = roles[i % roles.length]
+  return {
+    id: nextId(),
+    code: `ROL-${String(i + 1).padStart(3, '0')}`,
+    name: role.name,
+    description: role.description,
+    usersCount: amount(1, 25),
+    status: pick(['active', 'pending'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function userRecord(_slug: string, i: number) {
+  const emp = employees[i % employees.length]
+  const roleKeys = ['admin', 'manager', 'salesman', 'deliveryAgent', 'accountant']
+  const role = roleKeys[i % roleKeys.length]
+  return {
+    id: nextId(),
+    code: `USR-${String(i + 1).padStart(4, '0')}`,
+    name: emp.name,
+    email: `${emp.name.toLowerCase().replace(/\s+/g, '.')}@routesale.com`,
+    phone: `+91 ${amount(7000000000, 9999999999)}`,
+    role,
+    department: emp.dept,
+    status: pick(['active', 'pending'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function payrollRecord(_slug: string, i: number) {
+  const emp = employees[i % employees.length]
+  const months = ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026']
+  const monthlyBase = amount(18000, 55000)
+  const pendingSalary = amount(0, 15000)
+  const gross = monthlyBase + pendingSalary
+  const deductions = amount(1000, 8000)
+  return {
+    id: nextId(),
+    code: `PAY-${String(i + 1).padStart(5, '0')}`,
+    employeeId: `EMP-${String((i % employees.length) + 1).padStart(4, '0')}`,
+    name: emp.name,
+    department: emp.dept,
+    payrollMonth: months[i % months.length],
+    monthlyBase,
+    pendingSalary,
+    grossSalary: gross,
+    totalDeductions: deductions,
+    netSalary: Math.max(0, gross - deductions),
+    status: pick(['pending', 'approved', 'completed', 'rejected'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
 function employeeRecord(slug: string, i: number) {
   const emp = employees[i % employees.length]
+  const districts = ['Pune', 'Mumbai', 'Nashik', 'Nagpur', 'Kolhapur', 'Thane']
   return {
     id: nextId(), code: `EMP-${String(i + 1).padStart(4, '0')}`,
     name: emp.name, department: emp.dept, role: emp.role,
     phone: `+91 ${amount(7000000000, 9999999999)}`,
+    emergencyContact: `+91 ${amount(7000000000, 9999999999)}`,
+    address: `${amount(1, 999)} ${pick(['MG Road', 'Station Road', 'Market Yard'])}, ${pick(districts)}`,
+    district: pick(districts),
+    proof: '',
+    category: pick(['Permanent', 'Contract', 'Temporary', 'Intern']),
+    admin: pick(['Yes', 'No']),
     email: `${emp.name.toLowerCase().replace(' ', '.')}@routesale.com`,
     joinDate: date(amount(100, 1000)), salary: amount(18000, 65000),
     status: pick(statuses.hr), attendance: `${amount(18, 26)}/26`,
@@ -299,6 +533,29 @@ function customerRecord(slug: string, i: number) {
     lastVisit: date(Math.floor(Math.random() * 30)),
     totalPurchases: amount(50000, 2000000), status: outstanding > limit * 0.8 ? 'overdue' : 'active',
     visits: amount(1, 50), createdAt: new Date().toISOString(),
+  }
+}
+
+function supplierRecord(_slug: string, i: number) {
+  const outstanding = amount(0, 150000)
+  const limit = amount(100000, 500000)
+  const name = suppliers[i % suppliers.length]
+  const locations = ['Pune', 'Mumbai', 'Nashik', 'Nagpur', 'Kolhapur', 'Bengaluru']
+  const location = pick(locations)
+  return {
+    id: nextId(),
+    code: `SUP-${String(i + 1).padStart(5, '0')}`,
+    name,
+    phone: `+91 ${amount(7000000000, 9999999999)}`,
+    gst: `${amount(10, 35)}ABCDE${amount(1000, 9999)}F${amount(1, 9)}Z${amount(1, 9)}`,
+    address: `${amount(1, 999)} ${pick(['MG Road', 'Station Road', 'Market Yard', 'Industrial Area'])}, ${location}`,
+    location,
+    creditLimit: limit,
+    outstanding,
+    lastOrder: date(Math.floor(Math.random() * 60)),
+    totalPurchases: amount(100000, 3000000),
+    status: outstanding > limit * 0.85 ? 'overdue' : 'active',
+    createdAt: new Date().toISOString(),
   }
 }
 
@@ -366,15 +623,74 @@ function expenseRecord(slug: string, i: number) {
   }
 }
 
+function vehicleRecord(_slug: string, i: number) {
+  const vehicleTypes = ['Mini Truck', 'Truck', 'Van', 'Tempo', 'Pickup', 'Three Wheeler']
+  const vehicleNames = ['Tata Ace', 'Mahindra Bolero Pickup', 'Ashok Leyland Dost', 'Eicher Pro 2049', 'Maruti Super Carry', 'Piaggio Ape']
+  const type = vehicleTypes[i % vehicleTypes.length]
+  return {
+    id: nextId(),
+    code: `VEH-${String(i + 1).padStart(4, '0')}`,
+    vehicleNumber: vehicles[i % vehicles.length],
+    vehicleName: vehicleNames[i % vehicleNames.length],
+    vehicleType: type,
+    driver: pick(salesmen),
+    route: pick(routes),
+    warehouse: pick(warehouses),
+    loadCapacity: `${amount(500, 5000)} kg`,
+    lastServiceDate: date(amount(10, 120)),
+    status: pick(['active', 'in_transit', 'pending'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function driverRecord(_slug: string, i: number) {
+  const emp = employees[i % employees.length]
+  return {
+    id: nextId(),
+    code: `DRV-${String(i + 1).padStart(4, '0')}`,
+    name: emp.name,
+    phone: `+91 ${amount(7000000000, 9999999999)}`,
+    licenseNumber: `LIC-${amount(100000, 999999)}`,
+    assignedVehicle: vehicles[i % vehicles.length],
+    assignedRoute: pick(routes),
+    warehouse: pick(warehouses),
+    status: pick(['active', 'pending', 'in_transit'] as RecordStatus[]),
+    licenseExpiryDate: date(-amount(30, 720)),
+    createdAt: new Date().toISOString(),
+  }
+}
+
 function logisticsRecord(slug: string, i: number) {
+  const qty = amount(5, 200)
   return {
     id: nextId(), code: `DLV-${String(i + 1).padStart(5, '0')}`,
     vehicle: pick(vehicles), driver: pick(salesmen),
     route: pick(routes), customer: pick(customers),
+    deliverySchedule: `DS-${String(amount(1, 500)).padStart(4, '0')}`,
+    totalQuantity: qty,
     date: date(Math.floor(Math.random() * 14)), items: amount(1, 20),
     weight: `${amount(50, 500)} kg`, distance: `${amount(10, 120)} km`,
     status: pick(statuses.logistics), ewayBill: `EWB-${amount(100000, 999999)}`,
     amount: amount(5000, 150000), createdAt: new Date().toISOString(),
+  }
+}
+
+function ewayBillRecord(_slug: string, i: number) {
+  const transporters = ['ABC Logistics', 'Swift Transport', 'Malabar Freight', 'Express Cargo', 'Reliable Movers']
+  return {
+    id: nextId(),
+    code: `EWB-REF-${String(i + 1).padStart(4, '0')}`,
+    ewayBill: `EWB${Date.now().toString().slice(-8)}${String(i).padStart(2, '0')}`,
+    invoiceNo: `INV-${amount(1000, 9999)}`,
+    customer: pick(customers),
+    vehicle: pick(vehicles),
+    transporter: pick(transporters),
+    distance: `${amount(10, 500)}`,
+    validTill: date(-amount(1, 14)),
+    date: date(Math.floor(Math.random() * 14)),
+    status: pick(statuses.logistics),
+    amount: amount(5000, 150000),
+    createdAt: new Date().toISOString(),
   }
 }
 
@@ -573,7 +889,7 @@ function stockTransferRecord(slug: string, i: number) {
 function lowStockRecord(slug: string, i: number) {
   const available = amount(0, 70)
   const reorderLevel = amount(80, 250)
-  const st: RecordStatus = available === 0 ? 'overdue' : available < reorderLevel * 0.3 ? 'low_stock' : 'pending'
+  const st: RecordStatus = available === 0 ? 'overdue' : 'low_stock'
   return {
     id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
     name: products[i % products.length],
@@ -596,16 +912,19 @@ function expiryRecord(slug: string, i: number) {
   ]
   const scenario = pick(scenarios)
   const daysRemaining = Math.max(0, scenario.daysFromNow)
+  const view = i % 2 === 0 ? 'shop_owner' : 'admin_warehouse'
   return {
     id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
     name: products[i % products.length],
     batch: `B${amount(1000, 9999)}`,
     warehouse: pick(warehouses),
+    shop: customers[i % customers.length],
     category: pick(categories),
     batchStockCount: amount(10, 500),
     batchDate: date(amount(90, 365)),
     expiry: date(-scenario.daysFromNow),
     daysRemaining,
+    view,
     status: scenario.status,
     createdAt: new Date().toISOString(),
   }
@@ -625,6 +944,36 @@ function warehouseRecord(slug: string, i: number) {
     amount: amount(50000, 2000000),
     capacity: amount(2000, 10000),
     status: 'active' as RecordStatus,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function notificationRecord(_slug: string, i: number) {
+  const templates = [
+    { title: 'New order received', message: 'Order #ORD-1257 from Metro Wholesale', type: 'info' },
+    { title: 'Payment received', message: '₹45,200 from Shree Enterprises', type: 'success' },
+    { title: 'Low stock alert', message: 'Premium Banana Chips below minimum level', type: 'warning' },
+    { title: 'Route completed', message: 'Route R-12 completed by Rahul Sharma', type: 'info' },
+    { title: 'Invoice overdue', message: '5 invoices past due date', type: 'error' },
+    { title: 'Delivery dispatched', message: 'Dispatch DSP-1042 left warehouse for Kochi route', type: 'info' },
+    { title: 'Collection recorded', message: '₹12,800 collected from Green Valley Store', type: 'success' },
+    { title: 'Leave request', message: 'Anil Kumar requested 2 days casual leave', type: 'warning' },
+    { title: 'Purchase approved', message: 'PO-8834 approved by warehouse manager', type: 'success' },
+    { title: 'GPS offline', message: 'Driver Suresh Nair GPS signal lost for 15 min', type: 'error' },
+  ]
+  const tpl = templates[i % templates.length]
+  const mins = amount(1, 180)
+  const time = mins < 60 ? `${mins} min ago` : `${Math.floor(mins / 60)} hr ago`
+
+  return {
+    id: nextId(),
+    code: `NTF-${String(i + 1).padStart(4, '0')}`,
+    title: tpl.title,
+    message: tpl.message,
+    type: tpl.type,
+    time,
+    status: pick(['active', 'pending'] as RecordStatus[]),
+    date: date(Math.floor(Math.random() * 7)),
     createdAt: new Date().toISOString(),
   }
 }
@@ -672,8 +1021,8 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'accounting-tax-summary': reportRecord,
   // Purchase
   'purchase-purchase-orders': purchaseRecord, 'purchase-purchases': purchaseRecord,
-  'purchase-supplier-management': purchaseRecord, 'purchase-supplier-settlement': purchaseRecord,
-  'purchase-purchase-return': purchaseRecord, 'purchase-purchase-report': purchaseReportRecord,
+  'purchase-supplier-management': supplierRecord, 'purchase-supplier-settlement': purchaseRecord,
+  'purchase-purchase-return': purchaseReturnRecord, 'purchase-purchase-report': purchaseReportRecord,
   // Inventory
   'inventory-product-catalog': productRecord, 'inventory-categories': productRecord,
   'inventory-brands': productRecord, 'inventory-units': productRecord,
@@ -704,13 +1053,13 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'customers-customer-location': trackingRecord,
   // HR
   'hr-employees': employeeRecord, 'hr-attendance': employeeRecord,
-  'hr-payroll': employeeRecord, 'hr-incentives': employeeRecord,
-  'hr-sales-targets': employeeRecord, 'hr-performance': employeeRecord,
-  'hr-leave-management': employeeRecord, 'hr-roles-permissions': employeeRecord,
+  'hr-payroll': payrollRecord, 'hr-incentives': incentiveRecord,
+  'hr-sales-targets': salesTargetRecord, 'hr-performance': employeeRecord,
+  'hr-leave-management': leaveRecord, 'hr-roles-permissions': employeeRecord,
   // Logistics
   'logistics-delivery-schedule': logisticsRecord, 'logistics-dispatch': logisticsRecord,
-  'logistics-vehicle-management': logisticsRecord, 'logistics-driver-management': employeeRecord,
-  'logistics-live-tracking': trackingRecord, 'logistics-e-way-bills': logisticsRecord,
+  'logistics-vehicle-management': vehicleRecord, 'logistics-driver-management': driverRecord,
+  'logistics-live-tracking': trackingRecord, 'logistics-e-way-bills': ewayBillRecord,
   // Reports
   'reports-sales-report': salesOrder, 'reports-purchase-report': purchaseReportRecord,
   'reports-collection-report': collectionReportRecord, 'reports-expense-report': expenseRecord,
@@ -718,9 +1067,11 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'reports-employee-report': employeeRecord, 'reports-profit-loss': reportRecord,
   'reports-balance-sheet': reportRecord, 'reports-cash-flow': reportRecord,
   'reports-gst-report': gstRecord, 'reports-inventory-report': productReportRecord,
+  // User Management
+  'user-management-users': userRecord, 'user-management-roles': roleRecord,
   // Admin
-  'admin-users': employeeRecord, 'admin-roles': employeeRecord,
-  'admin-permissions': settingsRecord, 'admin-notifications': settingsRecord,
+  'admin-users': userRecord, 'admin-roles': roleRecord,
+  'admin-permissions': settingsRecord, 'admin-notifications': notificationRecord,
   'admin-ai-assistant-logs': settingsRecord, 'admin-system-settings': settingsRecord,
   'admin-company-settings': settingsRecord, 'admin-backup-restore': settingsRecord,
   'admin-audit-logs': settingsRecord,

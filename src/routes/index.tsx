@@ -25,6 +25,8 @@ import { WeeklySchedulePage } from '@/pages/route/WeeklySchedulePage'
 
 // Accounting Standalone Pages
 import { CurrentStockPage } from '@/pages/stock/CurrentStockPage'
+import { LowStockPage } from '@/pages/stock/LowStockPage'
+import { ExpiryReportPage } from '@/pages/stock/ExpiryReportPage'
 import { AccountPage } from '@/pages/accounts/AccountPage'
 import { TransactionsPage } from '@/pages/accounts/TransactionsPage'
 import { PaymentPage } from '@/pages/accounts/PaymentPage'
@@ -58,7 +60,9 @@ export function AppRoutes() {
       item.path !== '/accounting/journal' &&
       item.path !== '/accounting/profit-loss' &&
       item.path !== '/accounting/balance-sheet' &&
-      item.path !== '/stock-management/current-stock',
+      item.path !== '/stock-management/current-stock' &&
+      item.path !== '/stock-management/low-stock' &&
+      item.path !== '/stock-management/expiry-report',
   )
 
   return (
@@ -86,6 +90,8 @@ export function AppRoutes() {
 
         {/* Stock Management stand-alone custom pages */}
         <Route path="stock-management/current-stock" element={<CurrentStockPage />} />
+        <Route path="stock-management/low-stock" element={<LowStockPage />} />
+        <Route path="stock-management/expiry-report" element={<ExpiryReportPage />} />
         
         {/* Route Management stand-alone custom pages */}
         <Route path="route-sales/dashboard" element={<RouteDashboardPage />} />

@@ -118,13 +118,22 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     },
     MuiDialog: {
       styleOverrides: {
+        root: {
+          '& .MuiBackdrop-root': {
+            backgroundColor: 'rgba(26, 46, 37, 0.32)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+          },
+        },
         paper: {
-          borderRadius: 24,
-          border: '1px solid color-mix(in srgb, var(--rs-border-strong) 40%, transparent)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
-          backgroundColor: 'color-mix(in srgb, var(--rs-surface) 40%, transparent)',
-          backdropFilter: 'blur(20px) saturate(120%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+          borderRadius: 20,
+          border: '1px solid rgba(17, 24, 39, 0.08)',
+          boxShadow: '0 20px 56px rgba(17, 24, 39, 0.14), 0 4px 16px rgba(17, 24, 39, 0.06)',
+          backgroundColor: 'var(--rs-surface)',
+          backgroundImage: 'none',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+          overflow: 'hidden',
         },
       },
     },

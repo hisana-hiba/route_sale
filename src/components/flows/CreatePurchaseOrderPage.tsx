@@ -213,7 +213,7 @@ export function CreatePurchaseOrderPage() {
         </Grid>
 
         <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 700 }}>
             Product List
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -277,7 +277,12 @@ export function CreatePurchaseOrderPage() {
                           disabled={!isSelected}
                           value={isSelected ? qty : ''}
                           onChange={(e) => setQuantity(product.id, Number(e.target.value) || 1)}
-                          inputProps={{ min: 1, style: { textAlign: 'center' } }}
+                          slotProps={{
+                            htmlInput: {
+                              min: 1,
+                              style: { textAlign: 'center' },
+                            },
+                          }}
                           sx={{ width: 88 }}
                         />
                       </TableCell>
@@ -306,15 +311,15 @@ export function CreatePurchaseOrderPage() {
         >
           <Box>
             <Typography variant="body2" color="text.secondary">Products Selected</Typography>
-            <Typography variant="h6" fontWeight={700}>{selectedItems.length}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>{selectedItems.length}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
-            <Typography variant="h6" fontWeight={700}>{totalQuantity}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>{totalQuantity}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">Total Purchase</Typography>
-            <Typography variant="h6" fontWeight={700} color="primary.main">{formatCurrency(totalPurchase)}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>{formatCurrency(totalPurchase)}</Typography>
           </Box>
         </Box>
 

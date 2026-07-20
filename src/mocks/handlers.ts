@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from 'msw'
-import { generateChartData, generateDashboardStats, generateModuleRecords, computeStats, computeColumnTotals, generateOrdersChart } from './data/generators'
+import { generateChartData, generateDashboardStats, generateModuleRecords, computeStats, computeColumnTotals, generateOrdersChart, calculateIncentive, calculateAchievementPercent } from './data/generators'
 import { flowHandlers } from './flowHandlers'
 import { getModuleConfig } from '@/config/modules'
 import type { ModuleListParams } from '@/api/client'
@@ -10,7 +10,103 @@ function getStore(slug: string) {
   if (!store.has(slug)) {
     store.set(slug, generateModuleRecords(slug, 55 + (slug.length % 20)))
   }
-  return store.get(slug)!
+  const records = store.get(slug)!
+  // Refresh expiry data if older records lack the role `view` field
+  if (slug.includes('expiry-report') && records.length > 0 && records[0].view == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh purchase data if older records lack the `credit` field
+  if (slug === 'purchase-purchases' && records.length > 0 && records[0].credit == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh supplier data if older records used purchase-order shape or missing new fields
+  if (slug === 'purchase-supplier-management' && records.length > 0 && (records[0].name == null || records[0].gst == null)) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh purchase return data if older records lack product/invoice fields
+  if (slug === 'purchase-purchase-return' && records.length > 0 && records[0].product == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh vehicle data if older records lack vehicleName field
+  if (slug === 'logistics-vehicle-management' && records.length > 0 && records[0].vehicleName == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh driver data if older records lack driver-specific fields
+  if (slug === 'logistics-driver-management' && records.length > 0 && records[0].licenseNumber == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh dispatch data if older records lack deliverySchedule/totalQuantity
+  if (slug === 'logistics-dispatch' && records.length > 0 && records[0].deliverySchedule == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh e-way bill data if older records lack invoiceNo/transporter fields
+  if (slug === 'logistics-e-way-bills' && records.length > 0 && (records[0].invoiceNo == null || records[0].transporter == null)) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh employee data if older records lack new HR fields
+  if (slug === 'hr-employees' && records.length > 0 && records[0].emergencyContact == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh payroll data if older records lack payroll-specific fields
+  if (slug === 'hr-payroll' && records.length > 0 && (records[0].payrollMonth == null || records[0].monthlyBase == null)) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh incentive data if older records lack incentive-specific fields
+  if (slug === 'hr-incentives' && records.length > 0 && records[0].incentiveEarned == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh leave data if older records lack leave-specific fields
+  if (slug === 'hr-leave-management' && records.length > 0 && records[0].leaveType == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh sales target data if older records lack target-specific fields
+  if (slug === 'hr-sales-targets' && records.length > 0 && records[0].targetName == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh user management data if older records lack user-specific fields
+  if (slug === 'user-management-users' && records.length > 0 && records[0].email == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  if (slug === 'user-management-roles' && records.length > 0 && records[0].description == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  // Refresh notification data if older records lack notification-specific fields
+  if (slug === 'admin-notifications' && records.length > 0 && records[0].title == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
+  return records
 }
 
 function parseListParams(url: URL): ModuleListParams {
@@ -30,7 +126,38 @@ function parseListParams(url: URL): ModuleListParams {
     creditMax: num('creditMax'),
     outstandingMin: num('outstandingMin'),
     outstandingMax: num('outstandingMax'),
+    view: num('view'),
   }
+}
+
+function applyIncentiveCalculation(body: Record<string, unknown>) {
+  const target = Number(body.target) || 0
+  const achieved = Number(body.achieved) || 0
+  const role = String(body.role ?? 'Salesman')
+  const { achievementPercent, incentiveEarned } = calculateIncentive(role, target, achieved)
+  return { ...body, target, achieved, achievementPercent, incentiveEarned }
+}
+
+function calculateLeaveDays(fromDate: string, toDate: string) {
+  const from = new Date(fromDate)
+  const to = new Date(toDate)
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) return 0
+  return Math.ceil((to.getTime() - from.getTime()) / 86400000) + 1
+}
+
+function applyLeaveCalculation(body: Record<string, unknown>) {
+  const fromDate = String(body.fromDate ?? '')
+  const toDate = String(body.toDate ?? '')
+  const totalDays = calculateLeaveDays(fromDate, toDate)
+  const appliedDate = body.appliedDate ? String(body.appliedDate) : new Date().toISOString().split('T')[0]
+  return { ...body, fromDate, toDate, totalDays, appliedDate, status: body.status ?? 'pending' }
+}
+
+function applySalesTargetCalculation(body: Record<string, unknown>) {
+  const targetValue = Number(body.targetValue) || 0
+  const achievedValue = Number(body.achievedValue) || 0
+  const achievementPercent = calculateAchievementPercent(targetValue, achievedValue)
+  return { ...body, targetValue, achievedValue, achievementPercent, status: body.status ?? 'active' }
 }
 
 function filter(records: Record<string, unknown>[], params: ModuleListParams) {
@@ -38,6 +165,7 @@ function filter(records: Record<string, unknown>[], params: ModuleListParams) {
   const {
     search, status, dateFrom, dateTo, route, shopCategory,
     lastVisitFrom, lastVisitTo, creditMin, creditMax, outstandingMin, outstandingMax,
+    view, payrollMonth,
   } = params
 
   if (search) {
@@ -47,6 +175,8 @@ function filter(records: Record<string, unknown>[], params: ModuleListParams) {
     )
   }
   if (status) result = result.filter((r) => r.status === status)
+  if (view) result = result.filter((r) => r.view === view)
+  if (payrollMonth) result = result.filter((r) => String(r.payrollMonth) === payrollMonth)
   if (dateFrom) result = result.filter((r) => String(r.date ?? r.createdAt ?? '').slice(0, 10) >= dateFrom)
   if (dateTo) result = result.filter((r) => String(r.date ?? r.createdAt ?? '').slice(0, 10) <= dateTo)
   if (route) result = result.filter((r) => String(r.route) === route)
@@ -207,17 +337,25 @@ export const handlers = [
     const slug = params.module as string
     const body = (await request.json()) as Record<string, unknown>
     const records = getStore(slug)
-    const config = getModuleConfig(`/${slug.replace(/-/g, '/')}`)
+    const payload = slug === 'hr-incentives'
+      ? applyIncentiveCalculation(body)
+      : slug === 'hr-leave-management'
+        ? applyLeaveCalculation(body)
+        : slug === 'hr-sales-targets'
+          ? applySalesTargetCalculation(body)
+          : body
     const newRecord = {
       id: String(Date.now()),
-      code: `${slug.slice(0, 3).toUpperCase()}-${String(records.length + 1).padStart(4, '0')}`,
+      code: slug === 'hr-sales-targets'
+        ? `TGT-${String(records.length + 1).padStart(5, '0')}`
+        : `${slug.slice(0, 3).toUpperCase()}-${String(records.length + 1).padStart(4, '0')}`,
       status: 'active',
       date: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
       ...(slug === 'logistics-e-way-bills' && !body.ewayBill
         ? { ewayBill: `EWB${Date.now().toString().slice(-12)}` }
         : {}),
-      ...body,
+      ...payload,
     }
     records.unshift(newRecord)
     return HttpResponse.json(newRecord, { status: 201 })
@@ -231,7 +369,14 @@ export const handlers = [
     const records = getStore(slug)
     const idx = records.findIndex((r) => r.id === id)
     if (idx === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-    records[idx] = { ...records[idx], ...body, updatedAt: new Date().toISOString() }
+    const payload = slug === 'hr-incentives'
+      ? applyIncentiveCalculation(body)
+      : slug === 'hr-leave-management'
+        ? applyLeaveCalculation(body)
+        : slug === 'hr-sales-targets'
+          ? applySalesTargetCalculation(body)
+          : body
+    records[idx] = { ...records[idx], ...payload, updatedAt: new Date().toISOString() }
     return HttpResponse.json(records[idx])
   }),
 

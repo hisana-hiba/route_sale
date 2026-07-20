@@ -25,6 +25,8 @@ export type ModuleListParams = ListParams & Partial<PeriodFilterParams> & Partia
   creditMax: string
   outstandingMin: string
   outstandingMax: string
+  view: string
+  payrollMonth: string
 }>
 
 export async function fetchList<T>(endpoint: string, params: ModuleListParams = {}): Promise<ModuleListResponse> {

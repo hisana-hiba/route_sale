@@ -9,6 +9,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import StorageIcon from '@mui/icons-material/Storage'
 
 export interface NavItem {
@@ -154,17 +155,25 @@ export const navigation: NavItem[] = [
     ],
   },
   {
+    id: 'user-management',
+    label: 'User Management',
+    icon: ManageAccountsIcon,
+    children: [
+      { id: 'um-users', label: 'Users', path: '/user-management/users' },
+      { id: 'um-roles', label: 'Roles', path: '/user-management/roles' },
+    ],
+  },
+  {
     id: 'admin',
     label: 'Administration',
     icon: SettingsIcon,
     children: [
       { id: 'system-settings', label: 'Settings', path: '/admin/system-settings' },
-      { id: 'users', label: 'Users & Roles', path: '/admin/users' },
       { id: 'permissions', label: 'Permissions', path: '/admin/permissions' },
       { id: 'notifications', label: 'Notifications', path: '/admin/notifications' },
-      { id: 'company-settings', label: 'Company Settings', path: '/admin/company-settings' },
-      { id: 'ewb', label: 'E-Way Bills (EWB)', path: '/logistics/e-way-bills' },
-      { id: 'audit-logs', label: 'Audit Logs', path: '/admin/audit-logs' },
+     // { id: 'company-settings', label: 'Company Settings', path: '/admin/company-settings' },
+     // { id: 'ewb', label: 'E-Way Bills (EWB)', path: '/logistics/e-way-bills' },
+     // { id: 'audit-logs', label: 'Audit Logs', path: '/admin/audit-logs' },
     ],
   },
 ]
@@ -233,7 +242,8 @@ const _allPaths = flattenNav([
       { id: 'rep-balance', label: 'Balance Sheet', path: '/reports/balance-sheet' },
       { id: 'rep-cashflow', label: 'Cash Flow', path: '/reports/cash-flow' },
       { id: 'rep-gst', label: 'GST Report', path: '/reports/gst-report' },
-      { id: 'admin-roles', label: 'Roles', path: '/admin/roles' },
+      { id: 'admin-roles', label: 'Roles (Legacy)', path: '/admin/roles' },
+      { id: 'admin-users', label: 'Users (Legacy)', path: '/admin/users' },
       { id: 'admin-ai', label: 'AI Assistant Logs', path: '/admin/ai-assistant-logs' },
       { id: 'admin-backup', label: 'Backup & Restore', path: '/admin/backup-restore' },
     ],

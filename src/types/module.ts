@@ -64,6 +64,7 @@ export type DocumentedFlow =
   | 'stock-allocation'
   | 'stock-management'
   | 'theme-settings'
+  | 'notifications'
 
 export interface ModuleConfig {
   slug: string
@@ -83,6 +84,7 @@ export interface ModuleConfig {
   features?: ModuleFeature[]
   sumFields?: string[]
   documentedFlow?: DocumentedFlow
+  showList?: boolean
 }
 
 export interface ChartData {

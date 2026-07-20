@@ -29,6 +29,10 @@ interface FilterBarProps {
   showDateFilter?: boolean
   showStatusFilter?: boolean
   showSearch?: boolean
+  monthFilter?: string
+  onMonthFilterChange?: (v: string) => void
+  monthOptions?: string[]
+  monthFilterLabel?: string
 }
 
 export function FilterBar({
@@ -36,6 +40,7 @@ export function FilterBar({
   dateFrom, dateTo, onDateFromChange, onDateToChange,
   onExportExcel, onExportPdf, onPrint, onRefresh,
   showDateFilter = true, showStatusFilter = true, showSearch = true,
+  monthFilter, onMonthFilterChange, monthOptions = [], monthFilterLabel = 'Month',
 }: FilterBarProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [extraStatus, setExtraStatus] = useState('')
@@ -79,6 +84,19 @@ export function FilterBar({
           },
         }}
       />
+      )}
+      {onMonthFilterChange && (
+        <TextField
+          select
+          label={monthFilterLabel}
+          value={monthFilter ?? ''}
+          onChange={(e) => onMonthFilterChange(e.target.value)}
+          size="small"
+          sx={{ minWidth: 150, '& .MuiOutlinedInput-root': inputRootSx }}
+        >
+          <MenuItem value="">All Months</MenuItem>
+          {monthOptions.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+        </TextField>
       )}
       {showStatusFilter && (
         <TextField
