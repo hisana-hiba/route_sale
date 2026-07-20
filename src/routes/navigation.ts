@@ -71,18 +71,13 @@ export const navigation: NavItem[] = [
       { id: 'payment', label: 'Payment', path: '/accounting/payment' },
       { id: 'receipt', label: 'Receipt', path: '/accounting/receipt' },
       { id: 'journal', label: 'Journal', path: '/accounting/journal' },
-     
-      //{ id: 'cash-book', label: 'Cash Book', path: '/accounting/cash-book' },
-      { id: 'receipt', label: 'receipt', path: '/accounting/receipt' },
-      //{ id: 'journal-entries', label: 'Journal Entries', path: '/accounting/journal-entries' },
-      ///{ id: 'cash book', label: 'cash Book', path: '/accounting/cash book' },
+
+    
       { id: 'General Ledger', label: 'General Ledger', path: '/accounting/general-ledger' },
-      //{ id: 'trial-balance', label: 'Trial Balance', path: '/accounting/trial-balance' },
+      
       { id: 'profit-loss', label: 'Profit & Loss', path: '/accounting/profit-loss' },
       { id: 'balance-sheet', label: 'Balance Sheet', path: '/accounting/balance-sheet' },
-      //{ id: 'receipt-voucher', label: 'Receipt Voucher', path: '/accounting/receipt-voucher' },
-      //{ id: 'payment-voucher', label: 'Payment Voucher', path: '/accounting/payment-voucher' },
-      //{ id: 'gst-report', label: 'GST Report', path: '/accounting/gst-report' },
+    
     ],
   },
   {

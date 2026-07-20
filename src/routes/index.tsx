@@ -24,6 +24,7 @@ import { TodayRoutePage } from '@/pages/route/TodayRoutePage'
 import { WeeklySchedulePage } from '@/pages/route/WeeklySchedulePage'
 
 // Accounting Standalone Pages
+import { CurrentStockPage } from '@/pages/stock/CurrentStockPage'
 import { AccountPage } from '@/pages/accounts/AccountPage'
 import { TransactionsPage } from '@/pages/accounts/TransactionsPage'
 import { PaymentPage } from '@/pages/accounts/PaymentPage'
@@ -56,7 +57,8 @@ export function AppRoutes() {
       item.path !== '/accounting/receipt' &&
       item.path !== '/accounting/journal' &&
       item.path !== '/accounting/profit-loss' &&
-      item.path !== '/accounting/balance-sheet',
+      item.path !== '/accounting/balance-sheet' &&
+      item.path !== '/stock-management/current-stock',
   )
 
   return (
@@ -81,6 +83,9 @@ export function AppRoutes() {
         <Route path="sales/quotations/new" element={<QuotationFormPage />} />
         <Route path="stock-management/stock-transfer/new" element={<CreateStockTransferPage />} />
         <Route path="purchase/purchase-orders/new" element={<CreatePurchaseOrderPage />} />
+
+        {/* Stock Management stand-alone custom pages */}
+        <Route path="stock-management/current-stock" element={<CurrentStockPage />} />
         
         {/* Route Management stand-alone custom pages */}
         <Route path="route-sales/dashboard" element={<RouteDashboardPage />} />
