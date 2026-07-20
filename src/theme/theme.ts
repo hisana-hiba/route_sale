@@ -1,6 +1,7 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles'
 import { getDesignTokens } from './palette'
 import type { ColorPresetId } from './presets'
+import { FONT_FAMILY, formLabelStyle } from './fonts'
 
 function tokens(mode: 'light' | 'dark', preset: ColorPresetId, customAccent?: string) {
   const c = getDesignTokens(preset, mode, customAccent)
@@ -90,7 +91,15 @@ const sharedComponents = (mode: 'light' | 'dark', preset: ColorPresetId, customA
     },
     MuiInputLabel: {
       styleOverrides: {
-        root: { color: 'var(--rs-text-secondary)' },
+        root: {
+          ...formLabelStyle,
+          '&.Mui-focused': { color: 'var(--rs-text-secondary)' },
+        },
+      },
+    },
+    MuiFormLabel: {
+      styleOverrides: {
+        root: formLabelStyle,
       },
     },
     MuiTableCell: {
@@ -196,16 +205,24 @@ export function createAppTheme(mode: 'light' | 'dark', preset: ColorPresetId = '
       divider: c.border,
     },
     typography: {
-      fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
-      h3: { fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.75rem' },
-      h4: { fontWeight: 800, letterSpacing: '-0.02em', color: c.textPrimary },
-      h5: { fontWeight: 700, letterSpacing: '-0.01em' },
-      h6: { fontWeight: 600 },
-      subtitle1: { fontWeight: 500, color: c.textSecondary },
-      body1: { fontSize: '0.9375rem', lineHeight: 1.6 },
-      body2: { fontSize: '0.8125rem', lineHeight: 1.5 },
-      caption: { fontSize: '0.75rem', color: c.textMuted },
-      button: { fontWeight: 600 },
+      fontFamily: FONT_FAMILY,
+      h3: { fontWeight: 800, letterSpacing: '-0.03em', fontSize: '2rem', lineHeight: 1.2 },
+      h4: { fontWeight: 800, letterSpacing: '-0.03em', fontSize: '1.75rem', lineHeight: 1.25, color: c.textPrimary },
+      h5: { fontWeight: 700, letterSpacing: '-0.02em', fontSize: '1.25rem' },
+      h6: { fontWeight: 700, letterSpacing: '-0.01em' },
+      subtitle1: { fontWeight: 500, fontSize: '0.9375rem', color: c.textSecondary },
+      subtitle2: { fontWeight: 600, fontSize: '0.8125rem', letterSpacing: '0.02em' },
+      body1: { fontSize: '0.9375rem', lineHeight: 1.6, fontWeight: 400 },
+      body2: { fontSize: '0.8125rem', lineHeight: 1.5, fontWeight: 400 },
+      caption: { fontSize: '0.75rem', color: c.textMuted, fontWeight: 500 },
+      overline: {
+        fontSize: '0.72rem',
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        color: c.textSecondary,
+      },
+      button: { fontWeight: 600, letterSpacing: '0.01em' },
     },
     shape: { borderRadius: 12 },
     components: sharedComponents(mode, preset, customAccent),

@@ -89,7 +89,7 @@ export function GroupedBarChartCard({ title, data, minHeight = { xs: 240, md: 30
                   textAnchor="end"
                   fontSize={9}
                   fill="#9CA3AF"
-                  fontFamily="Inter, system-ui, sans-serif"
+                  fontFamily="Plus Jakarta Sans, Inter, system-ui, sans-serif"
                 >
                   {tick === 0 ? '₹0' : `₹${tick}K`}
                 </text>
@@ -125,7 +125,7 @@ export function GroupedBarChartCard({ title, data, minHeight = { xs: 240, md: 30
                   textAnchor="middle"
                   fontSize={9}
                   fill="#9CA3AF"
-                  fontFamily="Inter, system-ui, sans-serif"
+                  fontFamily="Plus Jakarta Sans, Inter, system-ui, sans-serif"
                 >
                   {month}
                 </text>
@@ -142,7 +142,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
       <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: color, flexShrink: 0 }} />
-      <Typography sx={{ fontSize: '11px', color: '#6B7280', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <Typography sx={{ fontSize: '11px', color: '#6B7280', fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif' }}>
         {label}
       </Typography>
     </Box>

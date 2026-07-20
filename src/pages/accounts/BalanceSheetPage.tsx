@@ -125,7 +125,7 @@ export function BalanceSheetPage() {
     >
       {/* Single-tab bar */}
       <Box sx={{ display: 'flex', mb: 3, borderBottom: `1px solid ${v.border}` }}>
-        <Box sx={{ px: 2.5, py: 1.5, position: 'relative', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.875rem', fontWeight: 700, color: v.primary, '&::after': { content: '""', position: 'absolute', bottom: -1, left: 0, right: 0, height: 2, borderRadius: '2px 2px 0 0', background: `linear-gradient(90deg, ${v.primary}, ${v.secondary})` } }}>
+        <Box sx={{ px: 2.5, py: 1.5, position: 'relative', fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif', fontSize: '0.875rem', fontWeight: 700, color: v.primary, '&::after': { content: '""', position: 'absolute', bottom: -1, left: 0, right: 0, height: 2, borderRadius: '2px 2px 0 0', background: `linear-gradient(90deg, ${v.primary}, ${v.secondary})` } }}>
           Balance Sheet
         </Box>
       </Box>

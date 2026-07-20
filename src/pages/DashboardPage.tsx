@@ -102,7 +102,7 @@ export function DashboardPage() {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ fontWeight: dash.greeting.weight, color: dash.greeting.color, letterSpacing: '-0.02em', fontSize: dash.greeting.size, lineHeight: 1.2, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <Typography sx={{ fontWeight: dash.greeting.weight, color: dash.greeting.color, letterSpacing: '-0.02em', fontSize: dash.greeting.size, lineHeight: 1.2, fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif' }}>
           {getGreeting()}, Admin! 👋
         </Typography>
         <Typography sx={{ color: dash.greetingSub.color, mt: 0.75, fontSize: dash.greetingSub.size, fontWeight: dash.greetingSub.weight }}>

@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material'
 import { dash } from '@/components/dashboard/dashboardTokens'
+import { FONT_FAMILY_STACK } from '@/theme/fonts'
 
 type CardVariant = 'default' | 'warm' | 'gold' | 'rose' | 'sage' | 'cream'
 
@@ -24,7 +25,7 @@ export const dashCardHeaderSx = {
   fontSize: dash.title.size,
   color: dash.title.color,
   letterSpacing: '-0.01em',
-  fontFamily: 'Inter, system-ui, sans-serif',
+  fontFamily: FONT_FAMILY_STACK,
 } as const
 
 export const cardPadding = { px: 3, py: 2.5 } as const

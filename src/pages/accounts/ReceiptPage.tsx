@@ -475,7 +475,7 @@ export function ReceiptPage() {
                 cursor: 'pointer',
                 position: 'relative',
                 whiteSpace: 'nowrap',
-                fontFamily: 'Inter, system-ui, sans-serif',
+                fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
                 fontSize: '0.875rem',
                 fontWeight: isActive ? 700 : 500,
                 color: isActive ? v.primary : v.textSecondary,

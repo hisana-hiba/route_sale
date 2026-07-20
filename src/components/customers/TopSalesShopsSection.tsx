@@ -55,7 +55,7 @@ export function TopSalesShopsSection({ filters = {} }: TopSalesShopsSectionProps
               ))
             : (
                 <Grid size={{ xs: 12 }}>
-                  <Typography sx={{ color: dash.body.color, textAlign: 'center', py: 2, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                  <Typography sx={{ color: dash.body.color, textAlign: 'center', py: 2, fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif' }}>
                     No shops match the current filters.
                   </Typography>
                 </Grid>

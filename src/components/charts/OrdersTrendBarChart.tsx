@@ -98,7 +98,7 @@ export function OrdersTrendBarChart({
                   textAnchor="end"
                   fontSize={10}
                   fill={LABEL_COLOR}
-                  fontFamily="Inter, system-ui, sans-serif"
+                  fontFamily="Plus Jakarta Sans, Inter, system-ui, sans-serif"
                 >
                   {tick === 0 ? '₹0' : `₹${tick}K`}
                 </text>
@@ -130,7 +130,7 @@ export function OrdersTrendBarChart({
                   textAnchor="middle"
                   fontSize={10}
                   fill={LABEL_COLOR}
-                  fontFamily="Inter, system-ui, sans-serif"
+                  fontFamily="Plus Jakarta Sans, Inter, system-ui, sans-serif"
                 >
                   {month}
                 </text>

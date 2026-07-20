@@ -88,7 +88,7 @@ export function DashboardKpiCard({
             fontWeight: 500,
             fontSize: mini ? miniDims.labelSize : compact ? '12px' : kpi.labelSize,
             lineHeight: 1.25,
-            fontFamily: 'Inter, system-ui, sans-serif',
+            fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
             pr: 0.5,
           }}
           noWrap={mini}
@@ -117,7 +117,7 @@ export function DashboardKpiCard({
         sx={{
           position: 'relative',
           zIndex: 1,
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
           fontWeight: 700,
           color: kpi.valueColor,
           letterSpacing: '-0.02em',
@@ -138,7 +138,7 @@ export function DashboardKpiCard({
             color: isUp ? dash.trendUp : dash.trendDown,
             fontWeight: 600,
             fontSize: mini ? miniDims.trendSize : kpi.trendSize,
-            fontFamily: 'Inter, system-ui, sans-serif',
+            fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
             flexShrink: 0,
           }}
         >
@@ -150,7 +150,7 @@ export function DashboardKpiCard({
             color: dash.trendMuted,
             fontSize: mini ? miniDims.trendSize : isSmall ? '10px' : kpi.trendSize,
             fontWeight: 400,
-            fontFamily: 'Inter, system-ui, sans-serif',
+            fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',

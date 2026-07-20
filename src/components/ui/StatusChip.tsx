@@ -37,7 +37,7 @@ export function StatusChip({ status, size = 'small' }: StatusChipProps) {
         lineHeight: 1.2,
         textTransform: 'capitalize',
         whiteSpace: 'nowrap',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
         boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
       }}
     >

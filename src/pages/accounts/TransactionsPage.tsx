@@ -149,7 +149,7 @@ function exportData(name: string, headers: string[], rows: (string | number)[][]
   const win = window.open('', '_blank')
   if (!win) return
   win.document.write(
-    `<html><head><title>${name}</title><style>body{font-family:Inter,system-ui,sans-serif;padding:24px}h2{color:#111827}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left}th{background:#f3f4f6}</style></head><body><h2>${name}</h2><table><thead><tr>${headers
+    `<html><head><title>${name}</title><style>body{font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;padding:24px}h2{color:#111827}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left}th{background:#f3f4f6}</style></head><body><h2>${name}</h2><table><thead><tr>${headers
       .map((h) => `<th>${h}</th>`)
       .join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`,
   )
@@ -549,7 +549,7 @@ export function TransactionsPage({ defaultTab = 'transactions', title = 'Transac
                 cursor: 'pointer',
                 position: 'relative',
                 whiteSpace: 'nowrap',
-                fontFamily: 'Inter, system-ui, sans-serif',
+                fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
                 fontSize: '0.875rem',
                 fontWeight: isActive ? 700 : 500,
                 color: isActive ? v.primary : v.textSecondary,
