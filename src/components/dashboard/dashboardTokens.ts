@@ -55,4 +55,17 @@ export const quickActionBtn = {
   fontSize: '12px',
 } as const
 
+/** Product catalog — restrained, minimal styling used on the Products screen */
+export const productCatalog = {
+  cardBg: '#FFFFFF',
+  cardRadius: '14px',
+  cardBorder: '#E8EAE7',
+  cardHoverBorder: '#B9C9BF',
+  imageBg: '#F0F4F1',
+  categoryColor: '#2D6A4F',
+  stockHealthy: '#2D8A5B',
+  stockLow: '#D97706',
+  muted: '#717771',
+} as const
+
 export { statusPills } from '@/components/ui/statusStyles'

@@ -75,6 +75,10 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const isSuppliersPage = config.slug === 'purchase-supplier-management'
   const isDriversPage = config.slug === 'logistics-driver-management'
   const isPayrollPage = config.slug === 'hr-payroll'
+  const isProductCatalogPage = config.slug === 'inventory-product-catalog'
+  const isCategoriesPage = config.slug === 'inventory-categories'
+  const isBrandsPage = config.slug === 'inventory-brands'
+  const useEqualHeightInventoryCards = isCategoriesPage || isBrandsPage
 
   const PAYROLL_MONTH_OPTIONS = [
     'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026',
@@ -242,7 +246,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           : [{ label: 'Home', path: '/' }, { label: config.title }]
       }
       actions={
-        config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation' ? (
+        !isProductCatalogPage && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation') ? (
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
             {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
           </Button>
@@ -266,7 +270,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         />
       )}
 
-      {!isDriversPage && !isReportAnalysisPage && config.stats.length > 0 && (isOrdersPage ? (
+      {!isProductCatalogPage && !isDriversPage && !isReportAnalysisPage && config.stats.length > 0 && (isOrdersPage ? (
         <OverviewColumnChart
           kpis={config.stats.map((stat, i) => ({
             label: stat.label,
@@ -526,10 +530,10 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         </Grid>
       )}
 
-      {layoutVariant === 'inventory' && !isBatchManagementPage && (
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <DataPanel title="Stock Overview">
+      {layoutVariant === 'inventory' && !isBatchManagementPage && !isProductCatalogPage && (
+        <Grid container spacing={2} sx={{ mb: 2, alignItems: useEqualHeightInventoryCards ? 'stretch' : undefined }}>
+          <Grid size={{ xs: 12, md: 4 }} sx={useEqualHeightInventoryCards ? { display: 'flex' } : undefined}>
+            <DataPanel title="Stock Overview" sx={useEqualHeightInventoryCards ? { flex: 1, width: '100%' } : undefined}>
               {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
                 <Box key={String(r.id)} sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -542,8 +546,8 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             </DataPanel>
           </Grid>
           {data?.chart && (
-            <Grid size={{ xs: 12, md: 8 }}>
-              <DataPanel title="Stock Movement">
+            <Grid size={{ xs: 12, md: 8 }} sx={useEqualHeightInventoryCards ? { display: 'flex' } : undefined}>
+              <DataPanel title="Stock Movement" sx={useEqualHeightInventoryCards ? { flex: 1, width: '100%' } : undefined}>
                 <ApexChart data={data.chart} type="bar" height={200} />
               </DataPanel>
             </Grid>
@@ -634,7 +638,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         </Box>
       )}
 
-      {config.showList !== false && (
+      {config.showList !== false && !isProductCatalogPage && (
       <DataPanel
         title="Records"
         subtitle={`${data?.total ?? 0} total records`}

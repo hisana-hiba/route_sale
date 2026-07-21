@@ -8,6 +8,8 @@ import AddIcon from '@mui/icons-material/Add'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import SearchIcon from '@mui/icons-material/Search'
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiCall } from '@/api/flowClient'
 import { createItem, fetchList, updateItem } from '@/api/client'
@@ -20,6 +22,7 @@ import { colors } from '@/theme/palette'
 import type { DocumentedFlow } from '@/types/module'
 import { ThemeSettingsPanel } from '@/components/settings/ThemeSettingsPanel'
 import { NotificationsListPanel } from '@/components/settings/NotificationsListPanel'
+import { productCatalog } from '@/components/dashboard/dashboardTokens'
 
 interface FlowPanelProps {
   flow: DocumentedFlow
@@ -822,7 +825,15 @@ function ProductCatalogPanel() {
   const queryClient = useQueryClient()
   const { data: catalog = [] } = useQuery({ queryKey: ['products'], queryFn: () => apiCall<typeof products>('/products') })
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('All')
   const [form, setForm] = useState({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
+  const categories = ['All', ...Array.from(new Set(catalog.map((product) => product.category)))]
+  const visibleProducts = catalog.filter((product) => {
+    const query = search.trim().toLowerCase()
+    return (category === 'All' || product.category === category)
+      && (!query || [product.name, product.category, product.hsn].some((value) => value.toLowerCase().includes(query)))
+  })
 
   const save = useMutation({
     mutationFn: () =>
@@ -844,37 +855,130 @@ function ProductCatalogPanel() {
   })
 
   return (
-    <Box sx={{ mb: 2 }}>
-    <DataPanel title="Product Catalog" subtitle="CRUD with GST/HSN — Flow 3.12"
+    <Box sx={{ mb: 2.5 }}>
+    <DataPanel title="All products" subtitle={`${catalog.length} products`}
       actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>Add Product</Button>}
     >
-      <Grid container spacing={1.5}>
-        {catalog.map((p) => (
-          <Grid key={p.id} size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box sx={{ ...whiteCardSx, p: 2 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>{p.name}</Typography>
-              <Typography variant="caption" color="text.secondary">{p.category} · HSN {p.hsn}</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>{formatCurrency(p.price)} · GST {p.gstRate}%</Typography>
-              <LinearProgress variant="determinate" value={Math.min(p.stockQty / 5, 100)} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
-              <Typography variant="caption">Stock: {p.stockQty}</Typography>
+      <Box sx={{
+        mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap',
+      }}>
+        <TextField
+          size="small"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search products"
+          slotProps={{ input: { startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20, color: productCatalog.muted }} /> } }}
+          sx={{
+            flex: '1 1 240px',
+            '& .MuiOutlinedInput-root': { bgcolor: productCatalog.cardBg, borderRadius: '10px' },
+          }}
+        />
+        <TextField
+          select
+          size="small"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+        >
+          {categories.map((item) => <MenuItem key={item} value={item}>{item === 'All' ? 'All categories' : item}</MenuItem>)}
+        </TextField>
+      </Box>
+      <Grid container spacing={2}>
+        {visibleProducts.map((p) => (
+          <Grid key={p.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+            <Box sx={{
+              height: '100%', p: 2.25, bgcolor: productCatalog.cardBg,
+              border: `1px solid ${productCatalog.cardBorder}`,
+              borderRadius: productCatalog.cardRadius,
+              transition: 'border-color 160ms ease',
+              '&:hover': { borderColor: productCatalog.cardHoverBorder },
+            }}>
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={{
+                  width: 48, height: 48, flexShrink: 0, borderRadius: '12px',
+                  bgcolor: productCatalog.imageBg, display: 'grid',
+                  placeItems: 'center', color: productCatalog.categoryColor,
+                }}>
+                  <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>{p.name.charAt(0)}</Typography>
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography noWrap sx={{ color: colors.textPrimary, fontWeight: 700, fontSize: '0.9rem' }}>
+                    {p.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: productCatalog.muted }}>
+                    {p.category} · HSN {p.hsn}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                mt: 2, pt: 1.5, borderTop: `1px solid ${productCatalog.cardBorder}`,
+              }}>
+                <Box>
+                  <Typography sx={{ fontSize: '1rem', lineHeight: 1.2, fontWeight: 750, color: colors.textPrimary }}>
+                    {formatCurrency(p.price)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: productCatalog.muted }}>GST {p.gstRate}%</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Box sx={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    bgcolor: p.stockQty < 120 ? productCatalog.stockLow : productCatalog.stockHealthy,
+                  }} />
+                  <Typography variant="caption" sx={{
+                    color: p.stockQty < 120 ? productCatalog.stockLow : productCatalog.stockHealthy,
+                    fontWeight: 700,
+                  }}>
+                    {p.stockQty} {p.unit}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
           </Grid>
         ))}
       </Grid>
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Add Product</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-          <TextField label="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
-          <TextField label="Price" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))} />
-          <TextField label="GST %" type="number" value={form.gstRate} onChange={(e) => setForm((p) => ({ ...p, gstRate: Number(e.target.value) }))} />
-          <TextField label="HSN" value={form.hsn} onChange={(e) => setForm((p) => ({ ...p, hsn: e.target.value }))} />
-          <TextField label="Stock Qty" type="number" value={form.stockQty} onChange={(e) => setForm((p) => ({ ...p, stockQty: Number(e.target.value) }))} />
+      {visibleProducts.length === 0 && (
+        <Box sx={{ py: 6, textAlign: 'center' }}>
+          <Inventory2OutlinedIcon sx={{ fontSize: 42, color: productCatalog.muted, mb: 1 }} />
+          <Typography sx={{ fontWeight: 700, color: colors.textPrimary }}>No products found</Typography>
+          <Typography variant="body2" sx={{ color: productCatalog.muted }}>Try another search or category.</Typography>
+        </Box>
+      )}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '20px', p: 0.5 } } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 0.5 }}>Add a new product</DialogTitle>
+        <Typography variant="body2" sx={{ px: 3, color: productCatalog.muted }}>
+          Enter the product, tax and opening stock details.
+        </Typography>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '20px !important' }}>
+          <TextField size="small" label="Product name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+          <TextField size="small" label="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 7 }}>
+              <TextField fullWidth size="small" label="Price" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))} />
+            </Grid>
+            <Grid size={{ xs: 5 }}>
+              <TextField fullWidth size="small" label="GST %" type="number" value={form.gstRate} onChange={(e) => setForm((p) => ({ ...p, gstRate: Number(e.target.value) }))} />
+            </Grid>
+          </Grid>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 6 }}>
+              <TextField fullWidth size="small" label="HSN code" value={form.hsn} onChange={(e) => setForm((p) => ({ ...p, hsn: e.target.value }))} />
+            </Grid>
+            <Grid size={{ xs: 6 }}>
+              <TextField fullWidth size="small" label="Stock qty" type="number" value={form.stockQty} onChange={(e) => setForm((p) => ({ ...p, stockQty: Number(e.target.value) }))} />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
           <Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => save.mutate()} disabled={!form.name || save.isPending}>
-            {save.isPending ? 'Saving…' : 'Save'}
+            {save.isPending ? 'Saving…' : 'Save product'}
           </Button>
         </DialogActions>
       </Dialog>
