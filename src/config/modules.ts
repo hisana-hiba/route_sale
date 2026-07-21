@@ -909,6 +909,12 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
   ['route-sales-route-tracking', 'Route Tracking', 'tracking', 'tracking'],
   ['route-sales-route-performance', 'Route Performance', 'report', 'route', {
     features: ['routeOrderPerformance', 'reportTotals'],
+    stats: [
+      { key: 'total', label: 'Total  routes', format: 'number' },
+      { key: 'active', label: 'Active routes today', format: 'number' },
+      { key: 'completed', label: 'Completed routes', format: 'number' },
+      { key: 'pending', label: 'Pending routes', format: 'number' },
+    ],
     columns: [
       { field: 'orderNo', header: 'Order No.', width: 120 },
       { field: 'customer', header: 'Customer', flex: 1 },
