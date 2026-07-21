@@ -142,4 +142,42 @@ export const leaveTypes = ['Casual', 'Sick', 'Earned', 'Unpaid']
 
 export const returnReasons = ['Unsold', 'Damaged', 'Expired', 'Wrong Product', 'Quality Issue', 'Customer Request']
 
-export const returnConditions = ['Good', 'Damaged', 'Expired', 'Opened']
+/** Shop-wise product pricing rules for sales returns */
+export const returnPricingRules = [
+  {
+    id: 'rpr-1',
+    shopId: 'shop-1',
+    productId: 'p1',
+    amount: 820,
+    enabled: true,
+    variantSupport: true,
+    attributeSupport: false,
+  },
+  {
+    id: 'rpr-2',
+    shopId: 'shop-1',
+    productId: 'p2',
+    amount: 600,
+    enabled: true,
+    variantSupport: false,
+    attributeSupport: true,
+  },
+  {
+    id: 'rpr-3',
+    shopId: 'shop-2',
+    productId: 'p3',
+    amount: 110,
+    enabled: false,
+    variantSupport: true,
+    attributeSupport: true,
+  },
+  {
+    id: 'rpr-4',
+    shopId: 'shop-4',
+    productId: 'p4',
+    amount: 18,
+    enabled: true,
+    variantSupport: false,
+    attributeSupport: false,
+  },
+]

@@ -207,7 +207,8 @@ function SalesReturnPanel() {
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 600 }}>{String(r.code)} — {String(r.customer)}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {String(r.orderRef ?? 'No order link')} · {formatCurrency(Number(r.amount))} · {String(r.reason)}
+                {String(r.orderRef ?? 'No order link')} · {formatCurrency(Number(r.amount))}
+                {r.returnType ? ` · ${String(r.returnType).replace(/_/g, ' ')}` : ''}
               </Typography>
             </Box>
             <StatusChip status={String(r.status)} />

@@ -22,6 +22,7 @@ import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
 import { OverviewColumnChart } from '@/components/dashboard/OverviewColumnChart'
@@ -247,9 +248,21 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       }
       actions={
         !isProductCatalogPage && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation') ? (
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
-            {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {isSalesReturnPage && (
+              <Button
+                variant="outlined"
+                startIcon={<SettingsOutlinedIcon />}
+                onClick={() => navigate('/sales/sales-return/settings')}
+                sx={{ borderRadius: '12px', textTransform: 'none' }}
+              >
+                Settings
+              </Button>
+            )}
+            <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
+              {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
+            </Button>
+          </Box>
         ) : undefined
       }
     >

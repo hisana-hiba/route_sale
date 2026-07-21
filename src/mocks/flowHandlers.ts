@@ -1,6 +1,7 @@
 import { http, HttpResponse, delay } from 'msw'
 import {
   demoAccounts, shops, products, staff, defaultPermissions, leaveTypes, salesSchemes,
+  returnPricingRules as seedReturnPricingRules,
 } from './flowData'
 
 const orders: Record<string, unknown>[] = []
@@ -9,10 +10,12 @@ const routeAssignments: Record<string, unknown>[] = []
 const weeklySchedules: Record<string, unknown>[] = []
 const shopRequests: Record<string, unknown>[] = []
 const leaveRequests: Record<string, unknown>[] = []
+const returnPricingRules = [...seedReturnPricingRules]
 const attendanceToday = new Map<string, Record<string, unknown>>()
 const rolePermissions = { ...defaultPermissions }
 let orderCounter = 1000
 let returnCounter = 2000
+let pricingRuleCounter = seedReturnPricingRules.length
 
 function seedOrdersIfEmpty() {
   if (orders.length > 0) return
@@ -200,6 +203,58 @@ export const flowHandlers = [
       }
     }
     return HttpResponse.json({ success: true, data: salesReturns[idx] })
+  }),
+
+  http.get('/api/v1/return-pricing-rules', async () => {
+    await delay(200)
+    return HttpResponse.json({ success: true, data: returnPricingRules })
+  }),
+
+  http.post('/api/v1/return-pricing-rules', async ({ request }) => {
+    await delay(250)
+    const body = (await request.json()) as Record<string, unknown>
+    pricingRuleCounter += 1
+    const rule = {
+      id: `rpr-${pricingRuleCounter}`,
+      shopId: String(body.shopId ?? ''),
+      productId: String(body.productId ?? ''),
+      amount: Number(body.amount) || 0,
+      enabled: body.enabled !== false,
+      variantSupport: Boolean(body.variantSupport),
+      attributeSupport: Boolean(body.attributeSupport),
+    }
+    returnPricingRules.unshift(rule)
+    return HttpResponse.json({ success: true, data: rule })
+  }),
+
+  http.put('/api/v1/return-pricing-rules/:id', async ({ params, request }) => {
+    await delay(250)
+    const body = (await request.json()) as Record<string, unknown>
+    const idx = returnPricingRules.findIndex((r) => r.id === params.id)
+    if (idx < 0) {
+      return HttpResponse.json({ success: false, error: { message: 'Rule not found' } }, { status: 404 })
+    }
+    returnPricingRules[idx] = {
+      ...returnPricingRules[idx],
+      shopId: String(body.shopId ?? returnPricingRules[idx].shopId),
+      productId: String(body.productId ?? returnPricingRules[idx].productId),
+      amount: Number(body.amount ?? returnPricingRules[idx].amount),
+      enabled: body.enabled !== undefined ? Boolean(body.enabled) : returnPricingRules[idx].enabled,
+      variantSupport: body.variantSupport !== undefined
+        ? Boolean(body.variantSupport)
+        : returnPricingRules[idx].variantSupport,
+      attributeSupport: body.attributeSupport !== undefined
+        ? Boolean(body.attributeSupport)
+        : returnPricingRules[idx].attributeSupport,
+    }
+    return HttpResponse.json({ success: true, data: returnPricingRules[idx] })
+  }),
+
+  http.delete('/api/v1/return-pricing-rules/:id', async ({ params }) => {
+    await delay(200)
+    const idx = returnPricingRules.findIndex((r) => r.id === params.id)
+    if (idx >= 0) returnPricingRules.splice(idx, 1)
+    return HttpResponse.json({ success: true, data: { id: params.id } })
   }),
 
   http.get('/api/v1/route-assignments', async () => {

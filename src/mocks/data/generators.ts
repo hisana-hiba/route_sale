@@ -49,6 +49,7 @@ const units = ['Pcs', 'Box', 'Kg', 'Ltr', 'Pkt', 'Ctn']
 
 const statuses = {
   sales: ['pending', 'completed', 'cancelled', 'draft'] as RecordStatus[],
+  salesOrders: ['pending', 'completed', 'cancelled', 'draft', 'received'] as RecordStatus[],
   invoice: ['pending', 'completed', 'overdue', 'draft'] as RecordStatus[],
   purchase: ['pending', 'approved', 'completed', 'cancelled'] as RecordStatus[],
   inventory: ['active', 'low_stock', 'active', 'active'] as RecordStatus[],
@@ -201,11 +202,12 @@ export function computeStats(records: Record<string, unknown>[], statKeys: strin
 function salesOrder(slug: string, i: number) {
   const qty = amount(5, 200)
   const rate = amount(20, 500)
+  const orderStatuses = slug === 'sales-orders' ? statuses.salesOrders : statuses.sales
   return {
     id: nextId(), code: `ORD-${String(i + 1).padStart(5, '0')}`,
     customer: pick(customers), salesman: pick(salesmen), route: pick(routes),
     date: date(Math.floor(Math.random() * 60)), items: amount(1, 15),
-    quantity: qty, amount: qty * rate, status: pick(statuses.sales),
+    quantity: qty, amount: qty * rate, status: pick(orderStatuses),
     paymentMode: pick(['Cash', 'Credit', 'UPI', 'Cheque']),
     deliveryDate: date(-amount(1, 5)), createdAt: new Date().toISOString(),
   }

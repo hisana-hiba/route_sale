@@ -13,6 +13,7 @@ import { SalesEntryPage } from '@/pages/sales/SalesEntryPage'
 import { SalePriceEntryPage } from '@/pages/sales/SalePriceEntryPage'
 import { CollectionFormPage } from '@/pages/collections/CollectionFormPage'
 import { QuotationFormPage } from '@/pages/quotations/QuotationFormPage'
+import { SalesReturnSettingsPage } from '@/pages/sales/SalesReturnSettingsPage'
 import { ProtectedRoute } from './ProtectedRoute'
 import { allRoutes } from './navigation'
 
@@ -83,6 +84,7 @@ export function AppRoutes() {
         <Route path="sales/sale-price-entry" element={<SalePriceEntryPage />} />
         <Route path="sales/orders/new" element={<NewOrderWizard />} />
         <Route path="sales/sales-return/new" element={<SalesReturnWizard />} />
+        <Route path="sales/sales-return/settings" element={<SalesReturnSettingsPage />} />
         <Route path="route-sales/collections/new" element={<CollectionFormPage />} />
         <Route path="sales/quotations/new" element={<QuotationFormPage />} />
         <Route path="stock-management/stock-transfer/new" element={<CreateStockTransferPage />} />

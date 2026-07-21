@@ -4,17 +4,27 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   Grid,
+  IconButton,
   MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { apiCall } from '@/api/flowClient'
 import { createItem } from '@/api/client'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { useAuthStore } from '@/store/authStore'
+import { formatCurrency } from '@/utils/export'
 import { v, mix } from '@/theme/cssVars'
 
 interface Shop {
@@ -32,6 +42,14 @@ interface RouteAssignment {
   userId: string
   userName: string
   status: string
+}
+
+interface Product {
+  id: string
+  name: string
+  category: string
+  price: number
+  gstRate: number
 }
 
 const PAYMENT_TERMS = ['Cash', 'Credit'] as const
@@ -82,13 +100,20 @@ export function QuotationFormPage() {
   const [customerSearch, setCustomerSearch] = useState('')
   const [shopName, setShopName] = useState('')
   const [customerMobile, setCustomerMobile] = useState('')
-  const [paymentTerms, setPaymentTerms] = useState('Net 15')
+  const [paymentTerms, setPaymentTerms] = useState('Cash')
   const [status, setStatus] = useState('draft')
+  const [productSearch, setProductSearch] = useState('')
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [error, setError] = useState('')
 
   const { data: shops = [], isLoading: shopsLoading } = useQuery({
     queryKey: ['shops'],
     queryFn: () => apiCall<Shop[]>('/shops'),
+  })
+
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => apiCall<Product[]>('/products'),
   })
 
   const { data: assignments = [] } = useQuery({
@@ -102,12 +127,10 @@ export function QuotationFormPage() {
     },
   })
 
-  // Auto-select salesman from logged-in user
   useEffect(() => {
     if (user?.name) setSalesman(user.name)
   }, [user?.name])
 
-  // Auto-select route from today's assignment for this user (fallback to first active)
   useEffect(() => {
     if (route || assignments.length === 0) return
     const mine = assignments.find(
@@ -130,6 +153,40 @@ export function QuotationFormPage() {
     setCustomerMobile(selectedShop.mobile)
   }, [selectedShop])
 
+  const filteredProducts = useMemo(() => {
+    const q = productSearch.trim().toLowerCase()
+    if (!q) return products
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q),
+    )
+  }, [products, productSearch])
+
+  const lineItems = useMemo(
+    () => products.filter((p) => (quantities[p.id] ?? 0) > 0),
+    [products, quantities],
+  )
+
+  const quotationTotal = useMemo(
+    () => lineItems.reduce((sum, p) => sum + p.price * (quantities[p.id] ?? 0), 0),
+    [lineItems, quantities],
+  )
+
+  const setQty = (productId: string, qty: number) => {
+    setQuantities((prev) => {
+      const next = { ...prev }
+      if (qty <= 0) delete next[productId]
+      else next[productId] = qty
+      return next
+    })
+  }
+
+  const toggleProduct = (productId: string, checked: boolean) => {
+    setQty(productId, checked ? 1 : 0)
+  }
+
   const createQuotation = useMutation({
     mutationFn: () =>
       createItem('/sales-quotations', {
@@ -143,7 +200,14 @@ export function QuotationFormPage() {
         status,
         shopName,
         mobile: customerMobile,
-        amount: 0,
+        amount: quotationTotal,
+        items: lineItems.map((p) => ({
+          productId: p.id,
+          name: p.name,
+          qty: quantities[p.id],
+          price: p.price,
+          gstRate: p.gstRate,
+        })),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['module', 'sales-quotations'] })
@@ -172,6 +236,10 @@ export function QuotationFormPage() {
     }
     if (!paymentTerms) {
       setError('Please select payment terms.')
+      return
+    }
+    if (lineItems.length === 0) {
+      setError('Please add at least one product to the quotation.')
       return
     }
     createQuotation.mutate()
@@ -213,7 +281,7 @@ export function QuotationFormPage() {
         </Alert>
       )}
 
-      <Box sx={whiteCardSx}>
+      <Box sx={{ ...whiteCardSx, mb: 2.5 }}>
         <Typography sx={{ fontWeight: 700, mb: 2, color: v.textPrimary }}>
           Quotation Details
         </Typography>
@@ -365,6 +433,131 @@ export function QuotationFormPage() {
             </TextField>
           </Grid>
         </Grid>
+      </Box>
+
+      <Box sx={whiteCardSx}>
+        <Typography sx={{ fontWeight: 700, mb: 0.5, color: v.textPrimary }}>
+          Products
+        </Typography>
+        <Typography variant="body2" sx={{ color: v.textSecondary, mb: 2 }}>
+          Add products directly while creating this quotation.
+        </Typography>
+
+        <TextField
+          fullWidth
+          size="small"
+          label="Search products"
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
+          sx={{ ...fieldSx, mb: 2, maxWidth: 420 }}
+        />
+
+        <Box sx={{ overflowX: 'auto', border: `1px solid ${v.border}`, borderRadius: '12px' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: mix.surface(8) }}>
+                <TableCell padding="checkbox" />
+                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: v.textSecondary }}>Product</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: v.textSecondary }}>Category</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem', color: v.textSecondary }}>Price</TableCell>
+                <TableCell align="center" width={140} sx={{ fontWeight: 700, fontSize: '0.75rem', color: v.textSecondary }}>Qty</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem', color: v.textSecondary }}>Line Total</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {productsLoading && (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Typography variant="body2" color="text.secondary">Loading products…</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!productsLoading && filteredProducts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Typography variant="body2" color="text.secondary">No products found.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+              {filteredProducts.map((product) => {
+                const qty = quantities[product.id] ?? 0
+                const selected = qty > 0
+                return (
+                  <TableRow key={product.id} hover selected={selected}>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        size="small"
+                        checked={selected}
+                        onChange={(e) => toggleProduct(product.id, e.target.checked)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{product.name}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{product.category}</Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2">{formatCurrency(product.price)}</Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          disabled={!selected}
+                          onClick={() => setQty(product.id, Math.max(0, qty - 1))}
+                        >
+                          <RemoveIcon fontSize="small" />
+                        </IconButton>
+                        <Typography variant="body2" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>
+                          {selected ? qty : 0}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => setQty(product.id, qty + 1)}
+                        >
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {selected ? formatCurrency(product.price * qty) : '—'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </Box>
+
+        <Box
+          sx={{
+            mt: 2.5,
+            p: 2,
+            borderRadius: '12px',
+            bgcolor: mix.primary(6),
+            border: `1px solid ${mix.primary(14)}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ color: v.textSecondary }}>
+            {lineItems.length} product{lineItems.length === 1 ? '' : 's'} selected
+          </Typography>
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography variant="caption" sx={{ color: v.textMuted, fontWeight: 600 }}>
+              Quotation Total
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: v.primary }}>
+              {formatCurrency(quotationTotal)}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </PageShell>
   )

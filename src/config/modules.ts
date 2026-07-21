@@ -268,7 +268,22 @@ function cfg(
 // Build registry from navigation paths
 const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig>?][] = [
   // Sales
-  ['sales-orders', 'Orders', 'transaction', 'sales', { documentedFlow: 'new-order' as const }],
+  ['sales-orders', 'Orders', 'transaction', 'sales', {
+    documentedFlow: 'new-order' as const,
+    statuses: ['pending', 'completed', 'cancelled', 'draft', 'received'],
+    formFields: [
+      { name: 'customer', label: 'Customer', type: 'text', required: true },
+      { name: 'amount', label: 'Amount', type: 'number', required: true },
+      { name: 'date', label: 'Date', type: 'date', required: true },
+      { name: 'status', label: 'Status', type: 'select', options: [
+        { value: 'pending', label: 'pending' },
+        { value: 'completed', label: 'completed' },
+        { value: 'cancelled', label: 'cancelled' },
+        { value: 'draft', label: 'draft' },
+        { value: 'received', label: 'received' },
+      ]},
+    ],
+  }],
   ['sales-invoices', 'Invoices', 'transaction', 'invoice', {
     subtitle: 'Track invoice revenue, expenses, and order status',
     entityName: 'Invoice',
@@ -936,9 +951,17 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
     entityName: 'Collection',
     subtitle: 'Record shop collections against pending invoices',
     formFields: [],
+    columns: [
+      { field: 'code', header: 'Voucher', width: 120 },
+      { field: 'date', header: 'Date', type: 'date', width: 110 },
+      { field: 'account', header: 'Account', flex: 1 },
+      { field: 'particulars', header: 'Particulars', width: 140 },
+      { field: 'credit', header: 'Credit', type: 'currency', width: 110 },
+      { field: 'balance', header: 'Balance', type: 'currency', width: 120 },
+    ],
     stats: [
-      { key: 'totalDebit', label: 'Total Debit', format: 'currency' },
       { key: 'totalCreditBal', label: 'Total Credit', format: 'currency' },
+      { key: 'total', label: 'Entries', format: 'number' },
     ],
   }],
   ['route-sales-expenses', 'Expenses', 'ledger', 'ledger', {

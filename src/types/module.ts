@@ -3,6 +3,7 @@ import type { SvgIconComponent } from '@mui/icons-material'
 export type RecordStatus =
   | 'active' | 'pending' | 'completed' | 'cancelled' | 'draft'
   | 'overdue' | 'low_stock' | 'in_transit' | 'delivered' | 'approved' | 'rejected'
+  | 'received'
 
 export type LayoutType =
   | 'transaction' | 'report' | 'ledger' | 'inventory' | 'route'

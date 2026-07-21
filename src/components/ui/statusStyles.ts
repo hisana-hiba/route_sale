@@ -78,6 +78,13 @@ export const statusStyles: Record<string, StatusTone> = {
     border: 'rgba(4, 120, 87, 0.18)',
     dot: '#16A34A',
   },
+  received: {
+    label: 'Received',
+    color: '#1D4ED8',
+    bg: '#EFF6FF',
+    border: 'rgba(29, 78, 216, 0.18)',
+    dot: '#3B82F6',
+  },
   processing: {
     label: 'Processing',
     color: '#C2410C',

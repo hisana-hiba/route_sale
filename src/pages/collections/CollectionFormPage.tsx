@@ -40,6 +40,7 @@ interface Shop {
   category: string
   mobile: string
   outstanding?: number
+  creditLimit?: number
   pendingInvoices?: PendingInvoice[]
 }
 
@@ -97,14 +98,8 @@ export function CollectionFormPage() {
     [shop],
   )
 
-  const totalDebit = useMemo(
-    () => pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0),
-    [pendingInvoices],
-  )
-  const totalCredit = useMemo(
-    () => pendingInvoices.reduce((sum, inv) => sum + inv.paid, 0),
-    [pendingInvoices],
-  )
+  const totalCreditLimit = shop?.creditLimit ?? 0
+  const creditLimitExceeded = Boolean(shopId) && collectionAmount > totalCreditLimit && totalCreditLimit > 0
 
   const selectedInvoices = useMemo(
     () => pendingInvoices.filter((inv) => selectedIds.includes(inv.id)),
@@ -176,15 +171,14 @@ export function CollectionFormPage() {
         narration: `Collection from ${shop?.name}`,
         customer: shop?.name,
         shopId,
-        debit: 0,
         credit: totalCollected,
         amount: totalCollected,
         balance: Math.max(0, (shop?.outstanding ?? selectedOutstanding) - totalCollected),
         date: new Date().toISOString().split('T')[0],
         paymentMethod,
         collectionAmount,
-        totalDebit,
-        totalCredit,
+        totalCreditedAmount: collectionAmount,
+        totalCreditLimit,
         invoices: lines,
         status: 'completed',
       })
@@ -207,7 +201,11 @@ export function CollectionFormPage() {
       return
     }
     if (collectionAmount <= 0) {
-      setError('Please enter a collection amount greater than zero.')
+      setError('Please enter a total credited amount greater than zero.')
+      return
+    }
+    if (creditLimitExceeded) {
+      setError('Total Credited Amount exceeds the shop Total Credit Limit.')
       return
     }
     if (!paymentMethod) {
@@ -290,40 +288,61 @@ export function CollectionFormPage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
-              label="Total Debit Amount"
-              value={shopId ? formatCurrency(totalDebit) : '—'}
+              label="Total Credit Limit"
+              value={shopId ? formatCurrency(totalCreditLimit) : '—'}
               fullWidth
               size="small"
               slotProps={{ input: { readOnly: true } }}
-              sx={readonlySx}
-              helperText="Sum of pending invoice amounts"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <TextField
-              label="Total Credit Amount"
-              value={shopId ? formatCurrency(totalCredit) : '—'}
-              fullWidth
-              size="small"
-              slotProps={{ input: { readOnly: true } }}
-              sx={readonlySx}
-              helperText="Already collected against invoices"
+              sx={{
+                ...readonlySx,
+                ...(creditLimitExceeded
+                  ? {
+                      '& .MuiOutlinedInput-root': {
+                        ...readonlySx['& .MuiOutlinedInput-root'],
+                        color: colors.error,
+                        fontWeight: 700,
+                        '& fieldset': { borderColor: colors.error },
+                      },
+                      '& .MuiInputLabel-root': { color: colors.error },
+                      '& .MuiFormHelperText-root': { color: colors.error },
+                    }
+                  : {}),
+              }}
+              helperText={
+                creditLimitExceeded
+                  ? 'Credit limit exceeded'
+                  : 'Shop credit limit'
+              }
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
-              label="Collection Amount"
+              label="Total Credited Amount"
               type="number"
               value={collectionAmount || ''}
               onChange={(e) => setCollectionAmount(Math.max(0, Number(e.target.value)))}
               fullWidth
               size="small"
               disabled={!shopId}
-              sx={fieldSx}
+              sx={{
+                ...fieldSx,
+                ...(creditLimitExceeded
+                  ? {
+                      '& .MuiOutlinedInput-root': {
+                        ...fieldSx['& .MuiOutlinedInput-root'],
+                        '& fieldset': { borderColor: colors.error },
+                      },
+                      '& .MuiInputLabel-root': { color: colors.error },
+                      '& .MuiFormHelperText-root': { color: colors.error },
+                    }
+                  : {}),
+              }}
               helperText={
-                selectedOutstanding > 0
-                  ? `Selected outstanding: ${formatCurrency(selectedOutstanding)}`
-                  : 'Amount collected from the customer'
+                creditLimitExceeded
+                  ? `Exceeds limit of ${formatCurrency(totalCreditLimit)}`
+                  : selectedOutstanding > 0
+                    ? `Selected outstanding: ${formatCurrency(selectedOutstanding)}`
+                    : 'Amount collected from the customer'
               }
             />
           </Grid>
@@ -362,7 +381,7 @@ export function CollectionFormPage() {
           Pending Invoices
         </Typography>
         <Typography variant="body2" sx={{ color: v.textSecondary, mb: 2 }}>
-          Select invoices to pay. Collection amount is allocated oldest-first; you can adjust invoice-wise amounts.
+          Select invoices to pay. Total credited amount is allocated oldest-first; remaining balance is calculated automatically.
         </Typography>
 
         {!shopId && (
@@ -483,7 +502,7 @@ export function CollectionFormPage() {
             </Box>
             <Box>
               <Typography variant="caption" sx={{ color: v.textMuted, fontWeight: 600 }}>
-                Collection Amount
+                Total Credited Amount
               </Typography>
               <Typography sx={{ fontWeight: 700 }}>{formatCurrency(collectionAmount)}</Typography>
             </Box>
