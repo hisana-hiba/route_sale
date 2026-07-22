@@ -1,5 +1,11 @@
 /** Seed data aligned with Route Sales Complete Flow Documentation */
 
+/** Generates a lightweight inline SVG placeholder image for demo/mock product photos. */
+function productPlaceholderImage(emoji: string, from: string, to: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${from}"/><stop offset="100%" stop-color="${to}"/></linearGradient></defs><rect width="200" height="200" rx="28" fill="url(#g)"/><text x="50%" y="54%" font-size="96" text-anchor="middle" dominant-baseline="middle">${emoji}</text></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 export const demoAccounts = [
   { mobile: '9876543210', password: 'password123', role: 'salesman' as const, name: 'Rahul Sharma' },
   { mobile: '9876543211', password: 'password123', role: 'deliveryAgent' as const, name: 'Amit Delivery' },
@@ -76,26 +82,38 @@ export const products = [
   {
     id: 'p1', name: 'Premium Basmati Rice 10kg', category: 'Rice', price: 850, gstRate: 5,
     hsn: '1006', unit: 'pkt', stockQty: 240, barcode: '8901001001001', mrp: 950, mop: 880, batch: 'B-RIC-0626',
+    image: productPlaceholderImage('🍚', '#16a34a', '#22c55e'),
+    qtyValue: 10, qtyUnit: 'kg', packSize: '10 kg',
   },
   {
     id: 'p2', name: 'Sunflower Oil 5L', category: 'Oil', price: 620, gstRate: 5,
     hsn: '1512', unit: 'can', stockQty: 180, barcode: '8901002002002', mrp: 699, mop: 640, batch: 'B-OIL-0526',
+    image: productPlaceholderImage('🧴', '#f59e0b', '#fbbf24'),
+    qtyValue: 5, qtyUnit: 'L', packSize: '5 L',
   },
   {
     id: 'p3', name: 'Mineral Water 1L Case', category: 'Beverages', price: 120, gstRate: 12,
     hsn: '2201', unit: 'case', stockQty: 320, barcode: '8901003003003', mrp: 144, mop: 125, batch: 'B-WAT-0726',
+    image: productPlaceholderImage('🥤', '#0ea5e9', '#38bdf8'),
+    qtyValue: 1, qtyUnit: 'L', packSize: '1 L',
   },
   {
     id: 'p4', name: 'Potato Chips 50g Pack', category: 'Snacks', price: 20, gstRate: 12,
     hsn: '1905', unit: 'pkt', stockQty: 500, barcode: '8901004004004', mrp: 25, mop: 22, batch: 'B-SNP-0426',
+    image: productPlaceholderImage('🍟', '#f97316', '#fb923c'),
+    qtyValue: 50, qtyUnit: 'gm', packSize: '50 gm',
   },
   {
     id: 'p5', name: 'Toor Dal 1kg', category: 'Pulses', price: 145, gstRate: 5,
     hsn: '0713', unit: 'pkt', stockQty: 210, barcode: '8901005005005', mrp: 165, mop: 150, batch: 'B-DAL-0626',
+    image: productPlaceholderImage('🫘', '#b45309', '#d97706'),
+    qtyValue: 1, qtyUnit: 'kg', packSize: '1 kg',
   },
   {
     id: 'p6', name: 'Wheat Flour 5kg', category: 'Flour', price: 280, gstRate: 5,
     hsn: '1101', unit: 'pkt', stockQty: 95, barcode: '8901006006006', mrp: 320, mop: 290, batch: 'B-FLR-0526',
+    image: productPlaceholderImage('🌾', '#eab308', '#facc15'),
+    qtyValue: 5, qtyUnit: 'kg', packSize: '5 kg',
   },
 ]
 

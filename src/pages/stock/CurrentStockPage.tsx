@@ -6,6 +6,7 @@ import {
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, ICellRendererParams } from 'ag-grid-community'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
@@ -13,10 +14,10 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee'
 import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { PageShell, primaryButtonSx } from '@/components/ui/PageShell'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
 import { DataPanel } from '@/components/ui/DataPanel'
-import { ApexChart } from '@/components/charts/ApexChart'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { getModuleConfig } from '@/config/modules'
@@ -32,11 +33,9 @@ import { v } from '@/theme/cssVars'
 
 const CONFIG_PATH = '/stock-management/current-stock'
 
-const STOCK_SEGMENTS = [
-  { key: 'active', label: 'In Stock', color: statusStyles.active.dot },
-  { key: 'low_stock', label: 'Low Stock', color: statusStyles.low_stock.dot },
-  { key: 'overdue', label: 'Out of Stock', color: statusStyles.overdue.dot },
-] as const
+/** Shared fixed height for the warehouse-distribution and low-stock-alert cards so
+ *  neither one stretches to leave empty space — the alerts list scrolls internally instead. */
+const SIDE_PANEL_HEIGHT = 360
 
 function cellValue(row: Record<string, unknown>, col: ColumnDef) {
   const raw = row[col.field]
@@ -45,71 +44,8 @@ function cellValue(row: Record<string, unknown>, col: ColumnDef) {
   return raw ?? '—'
 }
 
-/** Donut ring rendered from a conic-gradient so segment colors match app status palette */
-function StockStatusDonut({ counts, total }: { counts: Record<string, number>; total: number }) {
-  const segments = STOCK_SEGMENTS.map((s) => ({ ...s, value: counts[s.key] ?? 0 }))
-  let acc = 0
-  const stops = segments
-    .map((s) => {
-      const start = total > 0 ? (acc / total) * 360 : 0
-      acc += s.value
-      const end = total > 0 ? (acc / total) * 360 : 0
-      return `${s.color} ${start}deg ${end}deg`
-    })
-    .join(', ')
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <Box
-        sx={{
-          position: 'relative',
-          width: 170,
-          height: 170,
-          borderRadius: '50%',
-          background: total > 0 ? `conic-gradient(${stops})` : v.border,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Box
-          sx={{
-            width: 118,
-            height: 118,
-            borderRadius: '50%',
-            bgcolor: v.surface,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.06)',
-          }}
-        >
-          <Typography sx={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: v.textPrimary }}>
-            {total}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: v.textSecondary, mt: 0.5 }}>Products</Typography>
-        </Box>
-      </Box>
-
-      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {segments.map((s) => {
-          const pct = total > 0 ? Math.round((s.value / total) * 100) : 0
-          return (
-            <Box key={s.key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: s.color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 13, color: v.textSecondary, flex: 1 }}>{s.label}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: v.textPrimary }}>{s.value}</Typography>
-              <Typography sx={{ fontSize: 12, color: v.textMuted, width: 42, textAlign: 'right' }}>{pct}%</Typography>
-            </Box>
-          )
-        })}
-      </Box>
-    </Box>
-  )
-}
-
 export function CurrentStockPage() {
+  const navigate = useNavigate()
   const config = useMemo(() => getModuleConfig(CONFIG_PATH), [])
   const themeMode = useAppStore((s) => s.themeMode)
   const themeVersion = useAppStore((s) => s.themeVersion)
@@ -155,7 +91,7 @@ export function CurrentStockPage() {
     () => allRows
       .filter((r) => r.status === 'low_stock' || r.status === 'overdue')
       .sort((a, b) => (Number(a.stock) || 0) - (Number(b.stock) || 0))
-      .slice(0, 6),
+      .slice(0, 12),
     [allRows],
   )
   const lowStockCount = statusCounts.low_stock + statusCounts.overdue
@@ -235,32 +171,14 @@ export function CurrentStockPage() {
         })}
       </Grid>
 
-      {/* Stock level chart + status donut */}
-      <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing }}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <DataPanel title={config.chartTitle ?? 'Stock Level Overview'} subtitle="Stock in vs stock out over time" fillHeight>
-            {data?.chart
-              ? <ApexChart data={data.chart} type="bar" height={300} />
-              : <Box sx={{ height: 300 }} />}
-          </DataPanel>
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <DataPanel title="Stock Status" subtitle="Availability breakdown" fillHeight>
-            <Box sx={{ py: 1 }}>
-              <StockStatusDonut counts={statusCounts} total={allRows.length} />
-            </Box>
-          </DataPanel>
-        </Grid>
-      </Grid>
-
       {/* Warehouse distribution + low-stock alerts */}
       <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <DataPanel title="Stock by Warehouse" subtitle="Share of total units across locations" fillHeight sx={{ height: '100%' }}>
+          <DataPanel title="Stock by Warehouse" subtitle="Share of total units across locations" fillHeight sx={{ height: SIDE_PANEL_HEIGHT }}>
             {warehouseTotals.length === 0 ? (
               <Typography variant="body2" color="text.secondary">No stock data.</Typography>
             ) : (
-              <>
+              <Box sx={{ overflowY: 'auto', pr: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1.75 }}>
                   <Typography sx={{ fontSize: 30, fontWeight: 800, color: v.textPrimary, lineHeight: 1, letterSpacing: '-0.02em' }}>
                     {new Intl.NumberFormat('en-IN').format(totalWarehouseUnits)}
@@ -308,7 +226,7 @@ export function CurrentStockPage() {
                     )
                   })}
                 </Grid>
-              </>
+              </Box>
             )}
           </DataPanel>
         </Grid>
@@ -317,28 +235,38 @@ export function CurrentStockPage() {
             title="Low Stock Alerts"
             subtitle="Items at or below reorder level"
             fillHeight
-            sx={{ height: '100%' }}
+            sx={{ height: SIDE_PANEL_HEIGHT }}
             actions={
-              lowStockCount > 0 ? (
-                <Box
-                  sx={{
-                    display: 'inline-flex', alignItems: 'center', gap: 0.75,
-                    px: 1.25, py: 0.5, borderRadius: '999px',
-                    bgcolor: statusStyles.low_stock.bg, color: statusStyles.low_stock.color,
-                    border: `1px solid ${statusStyles.low_stock.border}`,
-                    fontSize: 12, fontWeight: 700,
-                  }}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {lowStockCount > 0 && (
+                  <Box
+                    sx={{
+                      display: 'inline-flex', alignItems: 'center', gap: 0.75,
+                      px: 1.25, py: 0.5, borderRadius: '999px',
+                      bgcolor: statusStyles.low_stock.bg, color: statusStyles.low_stock.color,
+                      border: `1px solid ${statusStyles.low_stock.border}`,
+                      fontSize: 12, fontWeight: 700,
+                    }}
+                  >
+                    <WarningAmberOutlinedIcon sx={{ fontSize: 15 }} />
+                    {lowStockCount} to reorder
+                  </Box>
+                )}
+                <Button
+                  size="small"
+                  endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => navigate('/stock-management/low-stock')}
+                  sx={{ textTransform: 'none', fontWeight: 700, fontSize: 12.5, borderRadius: '999px', px: 1.25 }}
                 >
-                  <WarningAmberOutlinedIcon sx={{ fontSize: 15 }} />
-                  {lowStockCount} to reorder
-                </Box>
-              ) : undefined
+                  View All
+                </Button>
+              </Box>
             }
           >
             {lowStockItems.length === 0 ? (
               <Typography variant="body2" color="text.secondary">All products are sufficiently stocked.</Typography>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto', pr: 0.5 }}>
                 {lowStockItems.map((r) => {
                   const stock = Number(r.stock) || 0
                   const min = Number(r.minStock) || 1
@@ -350,7 +278,7 @@ export function CurrentStockPage() {
                     <Box
                       key={String(r.id)}
                       sx={{
-                        flex: 1, minHeight: 52,
+                        flexShrink: 0, minHeight: 52,
                         display: 'flex', alignItems: 'center', gap: 1.5,
                         px: 1.5, borderRadius: '12px',
                         border: `1px solid ${tone.border}`,

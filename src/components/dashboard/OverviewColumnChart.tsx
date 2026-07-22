@@ -1,7 +1,8 @@
-import { Grid, Skeleton } from '@mui/material'
+import { Grid, Skeleton, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
-import { OrdersTrendBarChart } from '@/components/charts/OrdersTrendBarChart'
+import { ApexChart } from '@/components/charts/ApexChart'
+import { DataPanel } from '@/components/ui/DataPanel'
 import { dashboardGridSpacing } from '@/components/ui/cardStyles'
 import { formatStatValue } from '@/hooks/useModuleData'
 import type { ChartData } from '@/types/module'
@@ -56,7 +57,18 @@ export function OverviewColumnChart({ kpis, chartTitle, chart, loading }: Overvi
           <Skeleton variant="rounded" sx={{ width: '100%', minHeight: { xs: 260, lg: 220 }, borderRadius: '16px' }} />
         ) : (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ width: '100%' }}>
-            <OrdersTrendBarChart title={chartTitle} data={chart} />
+            <DataPanel
+              title={chartTitle}
+              subtitle="Monthly order value trend"
+              fillHeight
+              sx={{ height: '100%', minHeight: { xs: 260, lg: 220 }, '& > div:last-child': { px: 2, pt: 1.5, pb: 1 } }}
+            >
+              {chart ? (
+                <ApexChart data={chart} type="bar" height={220} />
+              ) : (
+                <Typography variant="body2" color="text.secondary">No chart data available.</Typography>
+              )}
+            </DataPanel>
           </motion.div>
         )}
       </Grid>

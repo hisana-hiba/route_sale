@@ -792,7 +792,7 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
     formFields: [],
     entityName: 'Transfer',
     statuses: ['pending', 'approved', 'in_transit', 'completed', 'cancelled'],
-    chartType: 'area', chartTitle: 'Transfer Trend', showChart: true,
+    showChart: false,
   }],
   ['stock-management-low-stock', 'Low Stock', 'inventory', 'inventory', {
     subtitle: 'Monitor products below reorder level',
@@ -1062,6 +1062,7 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
   ['hr-attendance', 'Attendance', 'hr', 'hr', {
     subtitle: 'Track employee attendance records',
     entityName: 'Attendance',
+    formFields: [],
     showChart: false,
   }],
   ['hr-payroll', 'Payroll', 'hr', 'hr', {

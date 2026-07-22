@@ -191,7 +191,7 @@ export function SalePriceEntryPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {formatCurrency(inclTax)}
                       </Typography>
                     </TableCell>

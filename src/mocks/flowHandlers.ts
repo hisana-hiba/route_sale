@@ -119,9 +119,44 @@ export const flowHandlers = [
       mrp: Number(body.mrp) || Math.round(price * 1.15),
       mop: Number(body.mop) || Math.round(price * 1.05),
       batch: body.batch || `B-NEW-${new Date().toISOString().slice(2, 7).replace('-', '')}`,
+      image: body.image ?? '',
+      qtyValue: Number(body.qtyValue) || 1,
+      qtyUnit: body.qtyUnit ?? 'kg',
+      packSize: body.packSize || `${Number(body.qtyValue) || 1} ${body.qtyUnit ?? 'kg'}`,
     }
     products.push(product)
     return HttpResponse.json({ success: true, data: product })
+  }),
+
+  http.put('/api/v1/products/:id', async ({ params, request }) => {
+    await delay(250)
+    const body = (await request.json()) as Partial<(typeof products)[number]>
+    const idx = products.findIndex((p) => p.id === params.id)
+    if (idx === -1) {
+      return HttpResponse.json({ success: false, error: { message: 'Product not found' } }, { status: 404 })
+    }
+    const existing = products[idx]
+    const price = body.price != null ? Number(body.price) || 0 : existing.price
+    const updated = {
+      ...existing,
+      name: body.name ?? existing.name,
+      category: body.category ?? existing.category,
+      price,
+      gstRate: body.gstRate != null ? Number(body.gstRate) || 0 : existing.gstRate,
+      hsn: body.hsn ?? existing.hsn,
+      unit: body.unit ?? existing.unit,
+      stockQty: body.stockQty != null ? Number(body.stockQty) || 0 : existing.stockQty,
+      mrp: body.mrp != null ? Number(body.mrp) || 0 : existing.mrp,
+      mop: body.mop != null ? Number(body.mop) || 0 : existing.mop,
+      image: body.image !== undefined ? body.image : existing.image,
+      qtyValue: body.qtyValue != null ? Number(body.qtyValue) || 0 : existing.qtyValue,
+      qtyUnit: body.qtyUnit ?? existing.qtyUnit,
+      packSize: body.packSize || (body.qtyValue != null || body.qtyUnit != null
+        ? `${body.qtyValue ?? existing.qtyValue} ${body.qtyUnit ?? existing.qtyUnit}`
+        : existing.packSize),
+    }
+    products[idx] = updated
+    return HttpResponse.json({ success: true, data: updated })
   }),
 
   http.get('/api/v1/sales-schemes', async () => {

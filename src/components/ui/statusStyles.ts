@@ -148,6 +148,27 @@ export const statusStyles: Record<string, StatusTone> = {
     border: 'rgba(180, 83, 9, 0.2)',
     dot: '#F59E0B',
   },
+  scheduled: {
+    label: 'Scheduled',
+    color: '#1D4ED8',
+    bg: '#EFF6FF',
+    border: 'rgba(29, 78, 216, 0.18)',
+    dot: '#3B82F6',
+  },
+  in_progress: {
+    label: 'In Progress',
+    color: '#B45309',
+    bg: '#FFFBEB',
+    border: 'rgba(180, 83, 9, 0.2)',
+    dot: '#F59E0B',
+  },
+  skipped: {
+    label: 'Skipped',
+    color: '#B91C1C',
+    bg: '#FEF2F2',
+    border: 'rgba(185, 28, 28, 0.18)',
+    dot: '#EF4444',
+  },
 }
 
 /** Compact map for dashboard recent-order labels */

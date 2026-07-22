@@ -191,13 +191,22 @@ export function RouteDashboardPage() {
             </Button>
           )}
           <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<RouteIcon />}
+            onClick={() => navigate('/route-sales/route-planner')}
+            sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Route Planner
+          </Button>
+          <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/route-sales/add-route')}
+            onClick={() => navigate('/route-sales/route-builder')}
             sx={primaryButtonSx}
           >
-            Add Route
+            Create Route
           </Button>
         </Box>
       }

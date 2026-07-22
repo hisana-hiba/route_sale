@@ -23,11 +23,16 @@ import { AddRoutePage } from '@/pages/route/AddRoutePage'
 import { RouteAssignmentPage } from '@/pages/route/RouteAssignmentPage'
 import { TodayRoutePage } from '@/pages/route/TodayRoutePage'
 import { WeeklySchedulePage } from '@/pages/route/WeeklySchedulePage'
+import { RouteBuilderPage } from '@/pages/route/RouteBuilderPage'
+import { RoutePlannerPage } from '@/pages/route/RoutePlannerPage'
+import { MyRoutesPage } from '@/pages/route/MyRoutesPage'
+import { RouteExecutionPage } from '@/pages/route/RouteExecutionPage'
 
 // Accounting Standalone Pages
 import { CurrentStockPage } from '@/pages/stock/CurrentStockPage'
 import { LowStockPage } from '@/pages/stock/LowStockPage'
 import { ExpiryReportPage } from '@/pages/stock/ExpiryReportPage'
+import { WarehousePage } from '@/pages/stock/WarehousePage'
 import { AccountPage } from '@/pages/accounts/AccountPage'
 import { TransactionsPage } from '@/pages/accounts/TransactionsPage'
 import { PaymentPage } from '@/pages/accounts/PaymentPage'
@@ -47,6 +52,9 @@ export function AppRoutes() {
       item.path !== '/sales/entry' &&
       item.path !== '/sales/sale-price-entry' &&
       item.path !== '/route-sales/dashboard' &&
+      item.path !== '/route-sales/route-builder' &&
+      item.path !== '/route-sales/route-planner' &&
+      item.path !== '/route-sales/my-routes' &&
       item.path !== '/route-sales/route-assignment' &&
       item.path !== '/route-sales/todays-routes' &&
       item.path !== '/route-sales/weekly-schedule' &&
@@ -63,7 +71,8 @@ export function AppRoutes() {
       item.path !== '/accounting/balance-sheet' &&
       item.path !== '/stock-management/current-stock' &&
       item.path !== '/stock-management/low-stock' &&
-      item.path !== '/stock-management/expiry-report',
+      item.path !== '/stock-management/expiry-report' &&
+      item.path !== '/stock-management/warehouse',
   )
 
   return (
@@ -94,10 +103,15 @@ export function AppRoutes() {
         <Route path="stock-management/current-stock" element={<CurrentStockPage />} />
         <Route path="stock-management/low-stock" element={<LowStockPage />} />
         <Route path="stock-management/expiry-report" element={<ExpiryReportPage />} />
+        <Route path="stock-management/warehouse" element={<WarehousePage />} />
         
         {/* Route Management stand-alone custom pages */}
         <Route path="route-sales/dashboard" element={<RouteDashboardPage />} />
         <Route path="route-sales/add-route" element={<AddRoutePage />} />
+        <Route path="route-sales/route-builder" element={<RouteBuilderPage />} />
+        <Route path="route-sales/route-planner" element={<RoutePlannerPage />} />
+        <Route path="route-sales/my-routes" element={<MyRoutesPage />} />
+        <Route path="route-sales/my-routes/:routeId" element={<RouteExecutionPage />} />
         <Route path="route-sales/route-assignment" element={<RouteAssignmentPage />} />
         <Route path="route-sales/todays-routes" element={<TodayRoutePage />} />
         <Route path="route-sales/weekly-schedule" element={<WeeklySchedulePage />} />

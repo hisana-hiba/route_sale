@@ -51,6 +51,9 @@ export const navigation: NavItem[] = [
     icon: RouteIcon,
     children: [
       { id: 'rs-dashboard', label: 'Dashboard', path: '/route-sales/dashboard' },
+      { id: 'route-builder', label: 'Route Builder', path: '/route-sales/route-builder' },
+      { id: 'route-planner', label: 'Route Planner (Map)', path: '/route-sales/route-planner' },
+      { id: 'my-routes', label: 'My Routes (Driver)', path: '/route-sales/my-routes' },
       { id: 'route-assignment', label: 'Route Assignment', path: '/route-sales/route-assignment' },
       { id: 'todays-routes', label: "Today's Routes", path: '/route-sales/todays-routes' },
       { id: 'weekly-schedule', label: 'Weekly Schedule', path: '/route-sales/weekly-schedule' },
@@ -121,11 +124,10 @@ export const navigation: NavItem[] = [
     label: 'Logistics',
     icon: AirportShuttleIcon,
     children: [
-      { id: 'delivery-schedule', label: 'Delivery Schedule', path: '/logistics/delivery-schedule' },
-      { id: 'dispatch', label: 'Dispatch', path: '/logistics/dispatch' },
+     
       { id: 'vehicles', label: 'Vehicles', path: '/logistics/vehicle-management' },
       { id: 'drivers', label: 'Drivers', path: '/logistics/driver-management' },
-      { id: 'live-tracking', label: 'Live Tracking', path: '/logistics/live-tracking' },
+      
       { id: 'e-way-bills', label: 'E-Way Bills (EWB)', path: '/logistics/e-way-bills' },
     ],
   },

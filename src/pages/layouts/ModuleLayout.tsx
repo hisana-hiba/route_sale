@@ -26,9 +26,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
 import { OverviewColumnChart } from '@/components/dashboard/OverviewColumnChart'
-import { PeriodFilterPanel } from '@/components/orders/PeriodFilterPanel'
 import { OrderRecordCards } from '@/components/orders/OrderRecordCards'
-import { usePeriodFilters } from '@/hooks/usePeriodFilters'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { DataPanel } from '@/components/ui/DataPanel'
 import { StatusChip } from '@/components/ui/StatusChip'
@@ -37,6 +35,7 @@ import { ReportTotalsBar } from '@/components/module/ReportTotalsBar'
 import { ChartTypeSelector } from '@/components/module/ChartTypeSelector'
 import { RouteOrderPerformance } from '@/components/module/RouteOrderPerformance'
 import { WarehouseTransferPanel } from '@/components/module/WarehouseTransferPanel'
+import { WarehouseStockTabs } from '@/components/module/WarehouseStockTabs'
 import { FormFieldRenderer } from '@/components/module/FormFieldRenderer'
 import { DocumentedFlowPanel } from '@/components/flows/DocumentedFlowPanel'
 import { SalesTabs } from '@/components/sales/SalesTabs'
@@ -79,23 +78,16 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const isProductCatalogPage = config.slug === 'inventory-product-catalog'
   const isCategoriesPage = config.slug === 'inventory-categories'
   const isBrandsPage = config.slug === 'inventory-brands'
-  const useEqualHeightInventoryCards = isCategoriesPage || isBrandsPage
+  const isSimpleCatalogListPage = isCategoriesPage || isBrandsPage
+  const isWarehousePage =
+    config.slug === 'stock-management-warehouse' ||
+    config.slug === 'inventory-warehouse'
 
   const PAYROLL_MONTH_OPTIONS = [
     'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026',
     'Aug 2026', 'Sep 2026', 'Oct 2026', 'Nov 2026', 'Dec 2026',
   ]
   const [payrollMonthFilter, setPayrollMonthFilter] = useState('')
-
-  const {
-    period: orderPeriod,
-    customFrom: orderCustomFrom,
-    customTo: orderCustomTo,
-    applied: appliedPeriodFilters,
-    setPeriod: setOrderPeriod,
-    setCustomFrom: setOrderCustomFrom,
-    setCustomTo: setOrderCustomTo,
-  } = usePeriodFilters()
 
   const payrollExtraParams = useMemo(
     () => (isPayrollPage && payrollMonthFilter ? { payrollMonth: payrollMonthFilter } : undefined),
@@ -108,7 +100,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
     search, setSearch, statusFilter, setStatusFilter,
     dateFrom, setDateFrom, dateTo, setDateTo,
     createMutation, updateMutation, deleteMutation,
-  } = useModuleData(config, isOrdersPage ? appliedPeriodFilters : undefined, payrollExtraParams)
+  } = useModuleData(config, undefined, payrollExtraParams)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [viewOpen, setViewOpen] = useState(false)
@@ -118,11 +110,6 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
   const [chartType, setChartType] = useState<ChartType>(config.chartType ?? 'bar')
 
   const { control, handleSubmit, reset, setValue } = useForm({ defaultValues: {} as Record<string, string> })
-
-  useEffect(() => {
-    if (isOrdersPage) setPage(0)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedPeriodFilters, isOrdersPage])
 
   useEffect(() => {
     if ((location.state as { openCreate?: boolean })?.openCreate) {
@@ -247,7 +234,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           : [{ label: 'Home', path: '/' }, { label: config.title }]
       }
       actions={
-        !isProductCatalogPage && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation') ? (
+        !isProductCatalogPage && config.documentedFlow !== 'e-way-bill' && config.documentedFlow !== 'employee-directory' && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation') ? (
           <Box sx={{ display: 'flex', gap: 1 }}>
             {isSalesReturnPage && (
               <Button
@@ -272,18 +259,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         <DocumentedFlowPanel flow={config.documentedFlow} />
       )}
 
-      {isOrdersPage && (
-        <PeriodFilterPanel
-          period={orderPeriod}
-          customFrom={orderCustomFrom}
-          customTo={orderCustomTo}
-          onPeriodChange={setOrderPeriod}
-          onCustomFromChange={setOrderCustomFrom}
-          onCustomToChange={setOrderCustomTo}
-        />
-      )}
-
-      {!isProductCatalogPage && !isDriversPage && !isReportAnalysisPage && config.stats.length > 0 && (isOrdersPage ? (
+      {!isProductCatalogPage && !isDriversPage && !isReportAnalysisPage && !isSimpleCatalogListPage && config.stats.length > 0 && (isOrdersPage ? (
         <OverviewColumnChart
           kpis={config.stats.map((stat, i) => ({
             label: stat.label,
@@ -356,42 +332,6 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             </DataPanel>
           </Grid>
         </Grid>
-      ) : isBatchManagementPage ? (
-        <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing }}>
-          {config.stats.slice(0, 2).map((stat, i) => {
-            const Icon = statIcons[i % statIcons.length]
-            return (
-              <Grid key={stat.key} size={{ xs: 12, sm: 6, md: 3 }}>
-                <DashboardKpiCard
-                  label={stat.label}
-                  value={isLoading ? '—' : formatStatValue(data?.stats?.[stat.key], stat.format)}
-                  trend={defaultStatTrends[i % defaultStatTrends.length]}
-                  trendLabel="vs last month"
-                  icon={<Icon />}
-                  iconIndex={i}
-                />
-              </Grid>
-            )
-          })}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <DataPanel title="Stock Overview">
-              {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
-                <Box key={String(r.id)} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{String(r.name)}</Typography>
-                    <Typography variant="caption" color="error.main">{String(r.stock ?? r.batchStockCount)} / {String(r.minStock ?? '—')}</Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={Math.min((Number(r.stock ?? r.batchStockCount) / Math.max(Number(r.minStock) || 1, 1)) * 100, 100)}
-                    color="warning"
-                    sx={{ height: 5, borderRadius: 2, mt: 0.5 }}
-                  />
-                </Box>
-              ))}
-            </DataPanel>
-          </Grid>
-        </Grid>
       ) : (
         <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing }}>
           {(isExpensesPage ? config.stats.filter(s => s.key !== 'totalDebit' && s.key !== 'totalCreditBal') : config.stats).map((stat, i, arr) => {
@@ -426,6 +366,12 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       )}
 
       {features.includes('warehouseTransfer') && <WarehouseTransferPanel />}
+
+      {isWarehousePage && (
+        <Box sx={{ mb: dashboardGridSpacing }}>
+          <WarehouseStockTabs />
+        </Box>
+      )}
 
       {isReportAnalysisPage && data?.chart && (
         <Grid container spacing={dashboardGridSpacing} sx={{ mb: dashboardGridSpacing, alignItems: 'stretch' }}>
@@ -515,38 +461,20 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
         </Grid>
       )}
 
-      {layoutVariant === 'inventory' && isBatchManagementPage && (
+      {layoutVariant === 'inventory' && isBatchManagementPage && data?.chart && (
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          {config.stats.slice(2, 4).map((stat, i) => {
-            const iconIndex = i + 2
-            const Icon = statIcons[iconIndex % statIcons.length]
-            return (
-              <Grid key={stat.key} size={{ xs: 12, sm: 6, md: 3 }}>
-                <DashboardKpiCard
-                  label={stat.label}
-                  value={isLoading ? '—' : formatStatValue(data?.stats?.[stat.key], stat.format)}
-                  trend={defaultStatTrends[iconIndex % defaultStatTrends.length]}
-                  trendLabel="vs last month"
-                  icon={<Icon />}
-                  iconIndex={iconIndex}
-                />
-              </Grid>
-            )
-          })}
-          {data?.chart && (
-            <Grid size={{ xs: 12, md: 8 }}>
-              <DataPanel title="Stock Movement">
-                <ApexChart data={data.chart} type="bar" height={200} />
-              </DataPanel>
-            </Grid>
-          )}
+          <Grid size={{ xs: 12 }}>
+            <DataPanel title="Stock Movement">
+              <ApexChart data={data.chart} type="bar" height={200} />
+            </DataPanel>
+          </Grid>
         </Grid>
       )}
 
-      {layoutVariant === 'inventory' && !isBatchManagementPage && !isProductCatalogPage && (
-        <Grid container spacing={2} sx={{ mb: 2, alignItems: useEqualHeightInventoryCards ? 'stretch' : undefined }}>
-          <Grid size={{ xs: 12, md: 4 }} sx={useEqualHeightInventoryCards ? { display: 'flex' } : undefined}>
-            <DataPanel title="Stock Overview" sx={useEqualHeightInventoryCards ? { flex: 1, width: '100%' } : undefined}>
+      {layoutVariant === 'inventory' && !isBatchManagementPage && !isProductCatalogPage && !isSimpleCatalogListPage && (
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <DataPanel title="Stock Overview">
               {rows.filter((r) => r.status === 'low_stock').slice(0, 4).map((r) => (
                 <Box key={String(r.id)} sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -559,8 +487,8 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             </DataPanel>
           </Grid>
           {data?.chart && (
-            <Grid size={{ xs: 12, md: 8 }} sx={useEqualHeightInventoryCards ? { display: 'flex' } : undefined}>
-              <DataPanel title="Stock Movement" sx={useEqualHeightInventoryCards ? { flex: 1, width: '100%' } : undefined}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <DataPanel title="Stock Movement">
                 <ApexChart data={data.chart} type="bar" height={200} />
               </DataPanel>
             </Grid>
@@ -668,7 +596,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
             onExportPdf={() => exportToPdf(rows, config.slug, config.title, exportCols)}
             onPrint={() => printTable(config.title)}
             onRefresh={() => refetch()}
-            showDateFilter={!isOrdersPage && !isPayrollPage && layoutVariant !== 'settings'}
+            showDateFilter={!isPayrollPage && layoutVariant !== 'settings'}
             showStatusFilter={layoutVariant !== 'settings'}
             monthFilter={isPayrollPage ? payrollMonthFilter : undefined}
             onMonthFilterChange={isPayrollPage ? setPayrollMonthFilter : undefined}

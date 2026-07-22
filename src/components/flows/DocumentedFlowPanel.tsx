@@ -2,13 +2,14 @@ import { useState } from 'react'
 import {
   Box, Button, Typography, TextField, MenuItem, Grid, Dialog, DialogTitle,
   DialogContent, DialogActions, Chip, Alert, Tabs, Tab, Checkbox, FormControlLabel,
-  Table, TableBody, TableCell, TableHead, TableRow, IconButton, LinearProgress,
+  Table, TableBody, TableCell, TableHead, TableRow, IconButton, LinearProgress, Tooltip,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import SearchIcon from '@mui/icons-material/Search'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiCall } from '@/api/flowClient'
@@ -23,6 +24,7 @@ import type { DocumentedFlow } from '@/types/module'
 import { ThemeSettingsPanel } from '@/components/settings/ThemeSettingsPanel'
 import { NotificationsListPanel } from '@/components/settings/NotificationsListPanel'
 import { productCatalog } from '@/components/dashboard/dashboardTokens'
+import { ImageUploadField } from '@/components/module/ImageUploadField'
 
 interface FlowPanelProps {
   flow: DocumentedFlow
@@ -822,13 +824,18 @@ function PerformancePanel() {
   )
 }
 
+const EMPTY_PRODUCT_FORM = { name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0, image: '', qtyValue: 1, qtyUnit: 'kg' }
+
+const QTY_UNITS = ['gm', 'kg', 'ml', 'L', 'pcs', 'dozen', 'box']
+
 function ProductCatalogPanel() {
   const queryClient = useQueryClient()
   const { data: catalog = [] } = useQuery({ queryKey: ['products'], queryFn: () => apiCall<typeof products>('/products') })
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
-  const [form, setForm] = useState({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState(EMPTY_PRODUCT_FORM)
   const categories = ['All', ...Array.from(new Set(catalog.map((product) => product.category)))]
   const visibleProducts = catalog.filter((product) => {
     const query = search.trim().toLowerCase()
@@ -836,21 +843,44 @@ function ProductCatalogPanel() {
       && (!query || [product.name, product.category, product.hsn].some((value) => value.toLowerCase().includes(query)))
   })
 
+  const openAddDialog = () => {
+    setEditingId(null)
+    setForm(EMPTY_PRODUCT_FORM)
+    setOpen(true)
+  }
+
+  const openEditDialog = (product: (typeof products)[number]) => {
+    setEditingId(product.id)
+    setForm({
+      name: product.name, category: product.category, price: product.price, gstRate: product.gstRate,
+      hsn: product.hsn, unit: product.unit, stockQty: product.stockQty, image: product.image ?? '',
+      qtyValue: product.qtyValue ?? 1, qtyUnit: product.qtyUnit ?? 'kg',
+    })
+    setOpen(true)
+  }
+
   const save = useMutation({
     mutationFn: () =>
-      apiCall('/products', {
-        method: 'POST',
-        body: {
-          ...form,
-          barcode: `8901${String(Date.now()).slice(-9)}`,
-          mrp: Math.round(form.price * 1.15),
-          mop: Math.round(form.price * 1.05),
-          batch: `B-NEW-${new Date().toISOString().slice(5, 7)}${new Date().toISOString().slice(2, 4)}`,
-        },
-      }),
+      editingId
+        ? apiCall(`/products/${editingId}`, {
+          method: 'PUT',
+          body: { ...form, packSize: `${form.qtyValue} ${form.qtyUnit}` },
+        })
+        : apiCall('/products', {
+          method: 'POST',
+          body: {
+            ...form,
+            packSize: `${form.qtyValue} ${form.qtyUnit}`,
+            barcode: `8901${String(Date.now()).slice(-9)}`,
+            mrp: Math.round(form.price * 1.15),
+            mop: Math.round(form.price * 1.05),
+            batch: `B-NEW-${new Date().toISOString().slice(5, 7)}${new Date().toISOString().slice(2, 4)}`,
+          },
+        }),
     onSuccess: () => {
       setOpen(false)
-      setForm({ name: '', category: '', price: 0, gstRate: 5, hsn: '', unit: 'pkt', stockQty: 0 })
+      setEditingId(null)
+      setForm(EMPTY_PRODUCT_FORM)
       queryClient.invalidateQueries({ queryKey: ['products'] })
     },
   })
@@ -858,7 +888,7 @@ function ProductCatalogPanel() {
   return (
     <Box sx={{ mb: 2.5 }}>
     <DataPanel title="All products" subtitle={`${catalog.length} products`}
-      actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={() => setOpen(true)}>Add Product</Button>}
+      actions={<Button size="small" variant="contained" color="primary" startIcon={<AddIcon />} sx={primaryButtonSx} onClick={openAddDialog}>Add Product</Button>}
     >
       <Box sx={{
         mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap',
@@ -891,18 +921,35 @@ function ProductCatalogPanel() {
               height: '100%', p: 2.25, bgcolor: productCatalog.cardBg,
               border: `1px solid ${productCatalog.cardBorder}`,
               borderRadius: productCatalog.cardRadius,
+              position: 'relative',
               transition: 'border-color 160ms ease',
               '&:hover': { borderColor: productCatalog.cardHoverBorder },
             }}>
+              <Tooltip title="Edit product">
+                <IconButton
+                  size="small"
+                  onClick={() => openEditDialog(p)}
+                  sx={{
+                    position: 'absolute', top: 8, right: 8, color: productCatalog.muted,
+                    bgcolor: productCatalog.imageBg, '&:hover': { color: colors.primary },
+                  }}
+                >
+                  <EditOutlinedIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
               <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                 <Box sx={{
                   width: 48, height: 48, flexShrink: 0, borderRadius: '12px',
-                  bgcolor: productCatalog.imageBg, display: 'grid',
+                  bgcolor: productCatalog.imageBg, display: 'grid', overflow: 'hidden',
                   placeItems: 'center', color: productCatalog.categoryColor,
                 }}>
-                  <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>{p.name.charAt(0)}</Typography>
+                  {p.image ? (
+                    <Box component="img" src={p.image} alt={p.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>{p.name.charAt(0)}</Typography>
+                  )}
                 </Box>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Box sx={{ minWidth: 0, flex: 1, pr: 3 }}>
                   <Typography noWrap sx={{ color: colors.textPrimary, fontWeight: 700, fontSize: '0.9rem' }}>
                     {p.name}
                   </Typography>
@@ -911,6 +958,16 @@ function ProductCatalogPanel() {
                   </Typography>
                 </Box>
               </Box>
+              {p.packSize && (
+                <Chip
+                  label={p.packSize}
+                  size="small"
+                  sx={{
+                    mt: 1.25, height: 22, fontSize: '0.7rem', fontWeight: 700,
+                    bgcolor: productCatalog.imageBg, color: productCatalog.categoryColor,
+                  }}
+                />
+              )}
               <Box sx={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 mt: 2, pt: 1.5, borderTop: `1px solid ${productCatalog.cardBorder}`,
@@ -952,13 +1009,35 @@ function ProductCatalogPanel() {
         fullWidth
         slotProps={{ paper: { sx: { borderRadius: '20px', p: 0.5 } } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, pb: 0.5 }}>Add a new product</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, pb: 0.5 }}>{editingId ? 'Edit product' : 'Add a new product'}</DialogTitle>
         <Typography variant="body2" sx={{ px: 3, color: productCatalog.muted }}>
-          Enter the product, tax and opening stock details.
+          {editingId ? 'Update the product, tax and stock details.' : 'Enter the product, tax and opening stock details.'}
         </Typography>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '20px !important' }}>
+          <ImageUploadField
+            label="Product image"
+            helperText="Upload a product photo (JPG, PNG)"
+            value={form.image}
+            onChange={(value) => setForm((p) => ({ ...p, image: value }))}
+          />
           <TextField size="small" label="Product name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
           <TextField size="small" label="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 7 }}>
+              <TextField
+                fullWidth size="small" label="Quantity" type="number" value={form.qtyValue}
+                onChange={(e) => setForm((p) => ({ ...p, qtyValue: Number(e.target.value) }))}
+              />
+            </Grid>
+            <Grid size={{ xs: 5 }}>
+              <TextField
+                select fullWidth size="small" label="Unit" value={form.qtyUnit}
+                onChange={(e) => setForm((p) => ({ ...p, qtyUnit: e.target.value }))}
+              >
+                {QTY_UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+              </TextField>
+            </Grid>
+          </Grid>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 7 }}>
               <TextField fullWidth size="small" label="Price" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))} />
@@ -979,7 +1058,7 @@ function ProductCatalogPanel() {
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button onClick={() => setOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
           <Button variant="contained" color="primary" sx={primaryButtonSx} onClick={() => save.mutate()} disabled={!form.name || save.isPending}>
-            {save.isPending ? 'Saving…' : 'Save product'}
+            {save.isPending ? 'Saving…' : editingId ? 'Save changes' : 'Save product'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -139,8 +139,8 @@ function JournalEntryTab() {
             <TableHead>
               <TableRow sx={{ bgcolor: mix.primary(4) }}>
                 <TableCell sx={{ ...headCellSx, width: 56 }} />
-                <TableCell sx={headCellSx}>Party Type</TableCell>
-                <TableCell sx={headCellSx}>Party Name</TableCell>
+                <TableCell sx={headCellSx}>Debit Type</TableCell>
+                <TableCell sx={headCellSx}>Credit Type</TableCell>
                 <TableCell sx={headCellSx}>Account</TableCell>
                 <TableCell align="right" sx={headCellSx}>Debit</TableCell>
                 <TableCell align="right" sx={headCellSx}>Credit</TableCell>

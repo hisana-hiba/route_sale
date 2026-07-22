@@ -17,7 +17,6 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
 import { motion } from 'framer-motion'
 import { PageShell, primaryButtonSx } from '@/components/ui/PageShell'
 import { DashboardKpiCard } from '@/components/dashboard/DashboardKpiCard'
-import { CustomerPeriodFilter } from '@/components/customers/CustomerPeriodFilter'
 import { TopSalesShopsSection } from '@/components/customers/TopSalesShopsSection'
 import { AddCustomerForm } from '@/components/flows/AddCustomerForm'
 import { DataPanel } from '@/components/ui/DataPanel'
@@ -51,15 +50,14 @@ export function CustomersPage() {
   const themeVersion = useAppStore((s) => s.themeVersion)
 
   const {
-    period, customFrom, customTo, applied,
-    setPeriod, setCustomFrom, setCustomTo,
-  } = useCustomerFilters()
+    customFrom, customTo, applied,
+    setCustomFrom, setCustomTo,
+  } = useCustomerFilters('custom')
 
   const {
     data, isLoading, isFetching, refetch,
     page, setPage, pageSize, setPageSize,
     search, setSearch, statusFilter, setStatusFilter,
-    dateFrom, setDateFrom, dateTo, setDateTo,
     deleteMutation,
   } = useModuleData(config, undefined, applied)
 
@@ -134,15 +132,6 @@ export function CustomersPage() {
         </Button>
       }
     >
-      <CustomerPeriodFilter
-        period={period}
-        customFrom={customFrom}
-        customTo={customTo}
-        onPeriodChange={setPeriod}
-        onCustomFromChange={setCustomFrom}
-        onCustomToChange={setCustomTo}
-      />
-
       <Grid container spacing={dashboardGridSpacing} sx={gridSx}>
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -183,15 +172,14 @@ export function CustomersPage() {
             status={statusFilter}
             onStatusChange={setStatusFilter}
             statuses={config.statuses}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onDateFromChange={setDateFrom}
-            onDateToChange={setDateTo}
+            dateFrom={customFrom}
+            dateTo={customTo}
+            onDateFromChange={setCustomFrom}
+            onDateToChange={setCustomTo}
             onExportExcel={() => exportToExcel(rows, config.slug, exportCols)}
             onExportPdf={() => exportToPdf(rows, config.slug, config.title, exportCols)}
             onPrint={() => printTable(config.title)}
             onRefresh={() => refetch()}
-            showDateFilter={false}
           />
         </Box>
         <Box

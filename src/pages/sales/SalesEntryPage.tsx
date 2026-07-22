@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import {
-  Alert, Box, Button, Chip, Grid, IconButton, InputAdornment, MenuItem,
+  Alert, Box, Button, Chip, FormControlLabel, Grid, IconButton, InputAdornment, MenuItem,
+  Switch,
   Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
@@ -167,6 +168,10 @@ export function SalesEntryPage() {
   const [discountType, setDiscountType] = useState<'Flat' | 'Percent'>('Flat')
   const [invoiceDiscount, setInvoiceDiscount] = useState(0)
   const [amountReceived, setAmountReceived] = useState(0)
+  const [generateEWayBill, setGenerateEWayBill] = useState(false)
+  const [vehicleNumber, setVehicleNumber] = useState('')
+  const [transporterName, setTransporterName] = useState('')
+  const [ewayDistance, setEwayDistance] = useState('')
   const [error, setError] = useState('')
   const [appliedSchemeNames, setAppliedSchemeNames] = useState<string[]>([])
 
@@ -400,8 +405,8 @@ export function SalesEntryPage() {
   }, [customer, products])
 
   const createInvoice = useMutation({
-    mutationFn: () =>
-      createItem('/sales-invoices', {
+    mutationFn: async () => {
+      const invoice = await createItem('/sales-invoices', {
         code: invoiceNo,
         customer: customer?.name ?? '',
         salesman: staff.find((s) => s.id === salesPersonId)?.name ?? '',
@@ -423,9 +428,28 @@ export function SalesEntryPage() {
           discountPct: l.discountPct,
           tax: lineTotals(l).tax,
         })),
-      }),
+      })
+
+      if (generateEWayBill) {
+        const validTill = new Date(invoiceDate)
+        validTill.setDate(validTill.getDate() + 1)
+        await createItem('/logistics-e-way-bills', {
+          invoiceNo,
+          customer: customer?.name ?? '',
+          vehicle: vehicleNumber.trim(),
+          transporter: transporterName.trim(),
+          distance: ewayDistance.trim() || '0',
+          validTill: validTill.toISOString().split('T')[0],
+          amount: Math.round(grandTotal),
+          status: 'active',
+        })
+      }
+
+      return invoice
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['module', 'sales-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['module', 'logistics-e-way-bills'] })
       navigate('/sales/list')
     },
     onError: () => setError('Failed to save invoice. Please try again.'),
@@ -452,6 +476,10 @@ export function SalesEntryPage() {
     }
     if (paymentMode === 'Credit' && creditExceeded) {
       setError('Credit limit exceeded. Adjust payment or reduce invoice amount.')
+      return
+    }
+    if (generateEWayBill && (!vehicleNumber.trim() || !transporterName.trim())) {
+      setError('Enter vehicle number and transporter to generate the E-Way Bill.')
       return
     }
     createInvoice.mutate()
@@ -593,6 +621,52 @@ export function SalesEntryPage() {
                   sx={fieldSx}
                 />
               </Grid>
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={generateEWayBill}
+                      onChange={(e) => setGenerateEWayBill(e.target.checked)}
+                    />
+                  )}
+                  label="Generate E-Way Bill with this invoice"
+                  sx={{ ml: 0.25 }}
+                />
+              </Grid>
+              {generateEWayBill && (
+                <>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Vehicle Number"
+                      value={vehicleNumber}
+                      onChange={(e) => setVehicleNumber(e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={fieldSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Transporter"
+                      value={transporterName}
+                      onChange={(e) => setTransporterName(e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={fieldSx}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Distance (KM)"
+                      value={ewayDistance}
+                      onChange={(e) => setEwayDistance(e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={fieldSx}
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           </Box>
 
