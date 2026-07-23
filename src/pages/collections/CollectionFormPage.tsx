@@ -516,13 +516,28 @@ export function CollectionFormPage() {
                 </Typography>
               </Box>
             )}
-            <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, ml: { sm: 'auto' } }}>
-              <Typography variant="caption" sx={{ color: v.textMuted, fontWeight: 600 }}>
+            <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, ml: { sm: 'auto' }, minWidth: 180 }}>
+              <Typography variant="caption" sx={{ color: v.textMuted, fontWeight: 600, display: 'block', mb: 0.5 }}>
                 Total Collected Amount
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: v.primary }}>
-                {formatCurrency(totalCollected)}
-              </Typography>
+              <TextField
+                size="small"
+                type="number"
+                placeholder="Enter amount"
+                value={collectionAmount || ''}
+                onChange={(e) => setCollectionAmount(Math.max(0, Number(e.target.value)))}
+                disabled={!shopId || selectedIds.length === 0}
+                sx={{
+                  ...fieldSx,
+                  '& .MuiOutlinedInput-root': {
+                    ...fieldSx['& .MuiOutlinedInput-root'],
+                    fontWeight: 700,
+                    color: v.primary,
+                    bgcolor: v.surface,
+                  },
+                }}
+                slotProps={{ htmlInput: { min: 0, step: 'any' } }}
+              />
             </Box>
           </Box>
         )}
