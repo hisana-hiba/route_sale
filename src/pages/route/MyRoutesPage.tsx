@@ -26,6 +26,7 @@ import { RoleGuard } from '@/routes/RoleGuard'
 import { useAuthStore } from '@/store/authStore'
 import { useManagedRoutes, computeRouteProgress } from './useManagedRoutes'
 import { DRIVERS, findVehicle, findWarehouse } from './routeGeoData'
+import { RouteWorkflowStrip } from './RouteWorkflowStrip'
 import { formatDistance, formatDuration } from '@/utils/geo'
 import { v } from '@/theme/cssVars'
 
@@ -70,6 +71,7 @@ function MyRoutesContent() {
         { label: 'My Routes' },
       ]}
     >
+      <RouteWorkflowStrip activeStep={0} />
       <Paper sx={{ p: 2, mb: 3, ...whiteCardSx, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <IconButton size="small" onClick={() => setDate((d) => shiftDate(d, -1))}><ChevronLeftIcon /></IconButton>

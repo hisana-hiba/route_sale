@@ -100,3 +100,56 @@ export function buildGoogleMapsNavUrl(origin: LatLng, stops: LatLng[]): string {
 export function lerpLatLng(a: LatLng, b: LatLng, t: number): LatLng {
   return { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t }
 }
+
+/** Local planar metres around a reference latitude (good enough for city-scale corridors) */
+function toLocalMeters(p: LatLng, origin: LatLng): { x: number; y: number } {
+  const midLat = ((p.lat + origin.lat) / 2) * (Math.PI / 180)
+  return {
+    x: (p.lng - origin.lng) * 111_320 * Math.cos(midLat),
+    y: (p.lat - origin.lat) * 110_540,
+  }
+}
+
+export interface SegmentProjection {
+  /** 0 = at start, 1 = at end; clamped to the segment */
+  t: number
+  closest: LatLng
+  /** Perpendicular (or end-point) distance from the point to the segment, km */
+  distanceKm: number
+}
+
+/** Project a point onto the line segment from `a` to `b`. */
+export function projectOntoSegment(point: LatLng, a: LatLng, b: LatLng): SegmentProjection {
+  const p = toLocalMeters(point, a)
+  const bLocal = toLocalMeters(b, a)
+  const lenSq = bLocal.x * bLocal.x + bLocal.y * bLocal.y
+  let t = 0
+  if (lenSq > 0) {
+    t = (p.x * bLocal.x + p.y * bLocal.y) / lenSq
+    t = Math.max(0, Math.min(1, t))
+  }
+  const closest = lerpLatLng(a, b, t)
+  return { t, closest, distanceKm: haversineKm(point, closest) }
+}
+
+/**
+ * Customers whose coordinates fall within `corridorKm` of the start→end segment,
+ * ordered by progress along that segment (travel order from start to end).
+ */
+export function customersAlongRoute<T extends LatLng & { id: string }>(
+  start: LatLng,
+  end: LatLng,
+  customers: T[],
+  corridorKm: number,
+): Array<T & { distanceFromPathKm: number; progress: number }> {
+  const spanKm = haversineKm(start, end)
+  if (spanKm < 0.05) return []
+
+  return customers
+    .map((c) => {
+      const proj = projectOntoSegment(c, start, end)
+      return { ...c, distanceFromPathKm: proj.distanceKm, progress: proj.t }
+    })
+    .filter((c) => c.distanceFromPathKm <= corridorKm && c.progress > 0.02 && c.progress < 0.98)
+    .sort((a, b) => a.progress - b.progress || a.distanceFromPathKm - b.distanceFromPathKm)
+}

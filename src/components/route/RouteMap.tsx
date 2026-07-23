@@ -58,7 +58,7 @@ export function RouteMap({ warehouse, stops, polyline, currentLocation, highligh
           justifyContent: 'center',
         }}
       >
-        <Typography variant="body2" color="text.secondary">Select customers to preview the route on the map</Typography>
+        <Typography variant="body2" color="text.secondary">Set start and end locations to preview the route on the map</Typography>
       </Box>
     )
   }

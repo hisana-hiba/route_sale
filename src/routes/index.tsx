@@ -27,6 +27,7 @@ import { RouteBuilderPage } from '@/pages/route/RouteBuilderPage'
 import { RoutePlannerPage } from '@/pages/route/RoutePlannerPage'
 import { MyRoutesPage } from '@/pages/route/MyRoutesPage'
 import { RouteExecutionPage } from '@/pages/route/RouteExecutionPage'
+import { FieldDayFlowPage } from '@/pages/route/FieldDayFlowPage'
 
 // Accounting Standalone Pages
 import { CurrentStockPage } from '@/pages/stock/CurrentStockPage'
@@ -113,6 +114,7 @@ export function AppRoutes() {
         
         {/* Route Management stand-alone custom pages */}
         <Route path="route-sales/dashboard" element={<RouteDashboardPage />} />
+        <Route path="route-sales/field-day" element={<FieldDayFlowPage />} />
         <Route path="route-sales/add-route" element={<AddRoutePage />} />
         <Route path="route-sales/route-builder" element={<RouteBuilderPage />} />
         <Route path="route-sales/route-planner" element={<RoutePlannerPage />} />

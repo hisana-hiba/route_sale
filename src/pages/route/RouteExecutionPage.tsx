@@ -26,6 +26,7 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { RoleGuard } from '@/routes/RoleGuard'
 import { RouteMap } from '@/components/route/RouteMap'
 import { DeliverySummaryCards } from '@/components/route/DeliverySummaryCards'
+import { RouteWorkflowStrip } from './RouteWorkflowStrip'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useSimulatedMovement } from '@/hooks/useSimulatedMovement'
 import { buildGoogleMapsNavUrl, formatDistance, formatDuration } from '@/utils/geo'
@@ -239,6 +240,7 @@ function RouteExecutionContent() {
         </Button>
       }
     >
+      <RouteWorkflowStrip activeStep={route.status === 'completed' ? 9 : route.status === 'in_progress' ? 4 : 0} />
       {isMobile ? (
         <Box sx={{ position: 'relative' }}>
           <RouteMap

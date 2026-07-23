@@ -38,6 +38,7 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { DataPanel } from '@/components/ui/DataPanel'
 import { ApexChart } from '@/components/charts/ApexChart'
 import { useRouteState, type VisitRecord } from './routeState'
+import { RouteWorkflowStrip } from './RouteWorkflowStrip'
 import { formatCurrency } from '@/utils/export'
 import { v } from '@/theme/cssVars'
 
@@ -193,6 +194,15 @@ export function RouteDashboardPage() {
           <Button
             variant="outlined"
             color="primary"
+            startIcon={<TodayIcon />}
+            onClick={() => navigate('/route-sales/field-day')}
+            sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Field Day
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
             startIcon={<RouteIcon />}
             onClick={() => navigate('/route-sales/route-planner')}
             sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
@@ -211,6 +221,7 @@ export function RouteDashboardPage() {
         </Box>
       }
     >
+      <RouteWorkflowStrip activeStep={0} />
       {/* 4 unified design cards */}
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>

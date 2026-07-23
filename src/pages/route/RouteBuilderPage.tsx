@@ -1,44 +1,49 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
   Grid,
   InputAdornment,
   MenuItem,
   Paper,
-  Step,
-  StepLabel,
-  Stepper,
+  Slider,
   TextField,
   Typography,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import SaveIcon from '@mui/icons-material/Save'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import SearchIcon from '@mui/icons-material/Search'
-import WarehouseIcon from '@mui/icons-material/Warehouse'
+import TripOriginIcon from '@mui/icons-material/TripOrigin'
+import FlagIcon from '@mui/icons-material/Flag'
 import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import PersonIcon from '@mui/icons-material/Person'
+import StorefrontIcon from '@mui/icons-material/Storefront'
 import { PageShell, primaryButtonSx, whiteCardSx } from '@/components/ui/PageShell'
 import { RoleGuard } from '@/routes/RoleGuard'
 import { RouteMap } from '@/components/route/RouteMap'
-import { StopReorderList } from '@/components/route/StopReorderList'
 import { RouteSummaryBar } from '@/components/route/RouteSummaryBar'
 import { CUSTOMERS, DRIVERS, VEHICLES, WAREHOUSES } from './routeGeoData'
 import { useManagedRoutes } from './useManagedRoutes'
-import { computeRoute, reorderRoute } from './routeCompute'
-import type { RouteStop } from '@/types/route'
-import { v } from '@/theme/cssVars'
-
-const STEPS = ['Route Details', 'Select Customers', 'Sequence & Optimize']
+import { customersAlongRoute, estimateDurationMins, estimateLegDistanceKm, formatDistance, haversineKm } from '@/utils/geo'
+import { fetchDrivingRoute } from '@/utils/osrm'
+import type { LatLng, RouteStop, WarehouseRecord } from '@/types/route'
+import { v, mix } from '@/theme/cssVars'
+import { colors } from '@/theme/palette'
 
 function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }
+
+/** Named places that can be used as route start / end */
+const ROUTE_LOCATIONS: WarehouseRecord[] = [
+  ...WAREHOUSES,
+  { id: 'loc-elathur', name: 'Elathur Junction', address: 'Elathur, Kozhikode', lat: 11.3129, lng: 75.7659 },
+  { id: 'loc-beypore', name: 'Beypore Harbour', address: 'Beypore, Kozhikode', lat: 11.1706, lng: 75.8081 },
+  { id: 'loc-thondayad', name: 'Thondayad Junction', address: 'Thondayad, Kozhikode', lat: 11.2739, lng: 75.7965 },
+  { id: 'loc-meenchanda', name: 'Meenchanda', address: 'Meenchanda, Kozhikode', lat: 11.2915, lng: 75.7965 },
+]
 
 export function RouteBuilderPage() {
   return (
@@ -52,44 +57,60 @@ function RouteBuilderContent() {
   const navigate = useNavigate()
   const { createRoute } = useManagedRoutes()
 
-  const [activeStep, setActiveStep] = useState(0)
   const [routeName, setRouteName] = useState('')
-  const [warehouseId, setWarehouseId] = useState(WAREHOUSES[0].id)
+  const [startId, setStartId] = useState(ROUTE_LOCATIONS[0].id)
+  const [endId, setEndId] = useState(ROUTE_LOCATIONS[1].id)
+  const [corridorKm, setCorridorKm] = useState(3)
   const [vehicleId, setVehicleId] = useState(VEHICLES[0].id)
   const [driverId, setDriverId] = useState(DRIVERS[0].id)
   const [deliveryDate, setDeliveryDate] = useState(todayStr())
-
-  const [search, setSearch] = useState('')
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([])
+  const [excludedIds, setExcludedIds] = useState<string[]>([])
 
   const [stops, setStops] = useState<RouteStop[]>([])
   const [totalDistanceKm, setTotalDistanceKm] = useState(0)
   const [totalDurationMins, setTotalDurationMins] = useState(0)
   const [polyline, setPolyline] = useState<[number, number][]>([])
-  const [optimized, setOptimized] = useState(false)
   const [routingSource, setRoutingSource] = useState<'osrm' | 'estimate'>('estimate')
   const [loadingRoute, setLoadingRoute] = useState(false)
   const [selectedStopId, setSelectedStopId] = useState<string | undefined>()
 
-  const warehouse = useMemo(() => WAREHOUSES.find((w) => w.id === warehouseId)!, [warehouseId])
+  const start = useMemo(() => ROUTE_LOCATIONS.find((l) => l.id === startId)!, [startId])
+  const end = useMemo(() => ROUTE_LOCATIONS.find((l) => l.id === endId)!, [endId])
   const driver = useMemo(() => DRIVERS.find((d) => d.id === driverId)!, [driverId])
 
-  const filteredCustomers = useMemo(() => {
-    const q = search.toLowerCase()
-    return CUSTOMERS.filter((c) => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q) || c.category.toLowerCase().includes(q))
-  }, [search])
+  const warehouseIdForSave = WAREHOUSES.some((w) => w.id === startId) ? startId : WAREHOUSES[0].id
 
-  const toggleCustomer = (id: string) => {
-    setSelectedCustomerIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]))
-  }
+  const alongRoute = useMemo(() => {
+    if (startId === endId) return []
+    return customersAlongRoute(start, end, CUSTOMERS, corridorKm).filter((c) => !excludedIds.includes(c.id))
+  }, [start, end, startId, endId, corridorKm, excludedIds])
 
-  const previewStops: RouteStop[] = useMemo(
-    () =>
-      selectedCustomerIds.map((id, idx) => {
-        const c = CUSTOMERS.find((cust) => cust.id === id)!
+  const corridorSpanKm = useMemo(() => haversineKm(start, end), [start, end])
+
+  // Rebuild ordered stops + path whenever the corridor match set changes
+  useEffect(() => {
+    let cancelled = false
+
+    const run = async () => {
+      if (startId === endId || alongRoute.length === 0) {
+        setStops([])
+        setTotalDistanceKm(corridorSpanKm)
+        setTotalDurationMins(estimateDurationMins(corridorSpanKm * 1.35))
+        setPolyline([[start.lat, start.lng], [end.lat, end.lng]])
+        setRoutingSource('estimate')
+        setLoadingRoute(false)
+        return
+      }
+
+      setLoadingRoute(true)
+
+      let current: LatLng = start
+      const prelim: RouteStop[] = alongRoute.map((c, idx) => {
+        const legDistanceKm = estimateLegDistanceKm(current, c)
+        current = c
         return {
-          id: `preview-${id}`,
-          customerId: id,
+          id: `stop-${c.id}`,
+          customerId: c.id,
           name: c.name,
           address: c.address,
           phone: c.phone,
@@ -97,69 +118,47 @@ function RouteBuilderContent() {
           lng: c.lng,
           sequence: idx + 1,
           status: 'pending',
-          plannedEtaMins: 0,
-          legDistanceKm: 0,
+          plannedEtaMins: Math.max(1, Math.round(estimateDurationMins(legDistanceKm))),
+          legDistanceKm,
           orderValue: c.avgOrderValue,
           collectionAmount: 0,
         }
-      }),
-    [selectedCustomerIds],
-  )
+      })
 
-  const runCompute = async (optimize: boolean) => {
-    const customers = CUSTOMERS.filter((c) => selectedCustomerIds.includes(c.id))
-    if (customers.length === 0) return
-    setLoadingRoute(true)
-    const existingIdByCustomer: Record<string, string> = {}
-    stops.forEach((s) => (existingIdByCustomer[s.customerId] = s.id))
-    const result = await computeRoute(warehouse, customers, optimize, existingIdByCustomer)
-    setStops(result.stops)
-    setTotalDistanceKm(result.totalDistanceKm)
-    setTotalDurationMins(result.totalDurationMins)
-    setPolyline(result.polyline)
-    setOptimized(optimize)
-    setRoutingSource(result.routingSource)
-    setLoadingRoute(false)
-  }
+      const points: LatLng[] = [start, ...alongRoute, end]
+      const routing = await fetchDrivingRoute(points)
+      if (cancelled) return
 
-  const handleGoToSequence = async () => {
-    setActiveStep(2)
-    await runCompute(true)
-  }
+      const nextStops = prelim.map((s, idx) => {
+        const leg = routing.legs[idx]
+        return leg ? { ...s, legDistanceKm: leg.distanceKm, plannedEtaMins: Math.max(1, Math.round(leg.durationMins)) } : s
+      })
 
-  const handleReorder = async (newOrder: RouteStop[]) => {
-    setStops(newOrder.map((s, idx) => ({ ...s, sequence: idx + 1 })))
-    setLoadingRoute(true)
-    const result = await reorderRoute(warehouse, newOrder)
-    setStops(result.stops)
-    setTotalDistanceKm(result.totalDistanceKm)
-    setTotalDurationMins(result.totalDurationMins)
-    setPolyline(result.polyline)
-    setOptimized(false)
-    setRoutingSource(result.routingSource)
-    setLoadingRoute(false)
-  }
-
-  const handleRemoveStop = (stopId: string) => {
-    const stop = stops.find((s) => s.id === stopId)
-    if (!stop) return
-    setSelectedCustomerIds((prev) => prev.filter((id) => id !== stop.customerId))
-    const remaining = stops.filter((s) => s.id !== stopId)
-    if (remaining.length === 0) {
-      setStops([])
-      setTotalDistanceKm(0)
-      setTotalDurationMins(0)
-      setPolyline([])
-      return
+      setStops(nextStops)
+      setTotalDistanceKm(routing.distanceKm)
+      setTotalDurationMins(routing.durationMins)
+      setPolyline(routing.geometry.length > 1 ? routing.geometry : points.map((p) => [p.lat, p.lng] as [number, number]))
+      setRoutingSource(routing.source)
+      setLoadingRoute(false)
     }
-    void handleReorder(remaining)
+
+    void run()
+    return () => { cancelled = true }
+  }, [alongRoute, start, end, startId, endId, corridorSpanKm])
+
+  const handleExclude = (customerId: string) => {
+    setExcludedIds((prev) => [...prev, customerId])
   }
 
   const handleSave = () => {
-    if (stops.length === 0) return
+    if (stops.length === 0 || startId === endId) return
+    const name =
+      routeName.trim() ||
+      `${start.name.split(' ')[0]} → ${end.name.split(' ')[0]} · ${deliveryDate}`
+
     createRoute({
-      name: routeName || `Route ${warehouse.name.split(' ')[0]} - ${deliveryDate}`,
-      warehouseId,
+      name,
+      warehouseId: warehouseIdForSave,
       vehicleId,
       driverId,
       driverName: driver.name,
@@ -169,16 +168,21 @@ function RouteBuilderContent() {
       totalDistanceKm,
       totalDurationMins,
       polyline,
-      optimized,
+      optimized: true,
       routingSource,
     })
     navigate('/route-sales/route-planner')
   }
 
+  const mapWarehouse: WarehouseRecord = {
+    ...start,
+    name: `Start · ${start.name}`,
+  }
+
   return (
     <PageShell
-      title="Route Builder"
-      subtitle="Create an optimized delivery route with warehouse, vehicle, driver and customer stops"
+      title="Route Creation"
+      subtitle="Set start and end locations — shops along the path are auto-assigned in travel order"
       breadcrumbs={[
         { label: 'Home', path: '/' },
         { label: 'Route Management', path: '/route-sales/route-planner' },
@@ -196,187 +200,324 @@ function RouteBuilderContent() {
         </Button>
       }
     >
-      <Paper sx={{ ...whiteCardSx, mb: 3, py: 3 }}>
-        <Stepper activeStep={activeStep} alternativeLabel>
-          {STEPS.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Paper>
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Paper sx={{ ...whiteCardSx, p: 2.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2 }}>
+              Route endpoints
+            </Typography>
 
-      {activeStep === 0 && (
-        <Paper sx={{ p: 4, ...whiteCardSx, maxWidth: 760, mx: 'auto' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Route Details</Typography>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12 }}>
-              <TextField label="Route Name" fullWidth value={routeName} onChange={(e) => setRouteName(e.target.value)} placeholder="e.g. North Kozhikode Morning Route" />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                label="Warehouse"
-                fullWidth
-                value={warehouseId}
-                onChange={(e) => setWarehouseId(e.target.value)}
-                slotProps={{ input: { startAdornment: <InputAdornment position="start"><WarehouseIcon color="action" /></InputAdornment> } }}
-              >
-                {WAREHOUSES.map((w) => (
-                  <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                label="Vehicle"
-                fullWidth
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                slotProps={{ input: { startAdornment: <InputAdornment position="start"><LocalShippingIcon color="action" /></InputAdornment> } }}
-              >
-                {VEHICLES.map((veh) => (
-                  <MenuItem key={veh.id} value={veh.id} disabled={veh.status === 'maintenance'}>
-                    {veh.name} ({veh.plateNumber}) {veh.status === 'maintenance' ? '— In Maintenance' : ''}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                label="Driver / Salesman"
-                fullWidth
-                value={driverId}
-                onChange={(e) => setDriverId(e.target.value)}
-                slotProps={{ input: { startAdornment: <InputAdornment position="start"><PersonIcon color="action" /></InputAdornment> } }}
-              >
-                {DRIVERS.map((d) => (
-                  <MenuItem key={d.id} value={d.id}>{d.name} ({d.role === 'deliveryAgent' ? 'Driver' : 'Salesman'})</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="Delivery Date"
-                type="date"
-                fullWidth
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+            <TextField
+              label="Route Name"
+              fullWidth
+              size="small"
+              value={routeName}
+              onChange={(e) => setRouteName(e.target.value)}
+              placeholder="Optional — auto-named from start → end"
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Start Location"
+              value={startId}
+              onChange={(e) => {
+                setStartId(e.target.value)
+                setExcludedIds([])
+              }}
+              sx={{ mb: 2 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <TripOriginIcon sx={{ color: colors.primary, fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            >
+              {ROUTE_LOCATIONS.map((loc) => (
+                <MenuItem key={loc.id} value={loc.id} disabled={loc.id === endId}>
+                  {loc.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="End Location"
+              value={endId}
+              onChange={(e) => {
+                setEndId(e.target.value)
+                setExcludedIds([])
+              }}
+              sx={{ mb: 2 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FlagIcon sx={{ color: colors.secondary, fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            >
+              {ROUTE_LOCATIONS.map((loc) => (
+                <MenuItem key={loc.id} value={loc.id} disabled={loc.id === startId}>
+                  {loc.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Box sx={{ mb: 2.5, px: 0.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: v.textSecondary }}>
+                  Corridor width
+                </Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: colors.primary }}>
+                  {corridorKm.toFixed(1)} km
+                </Typography>
+              </Box>
+              <Slider
+                value={corridorKm}
+                onChange={(_, val) => {
+                  setCorridorKm(val as number)
+                  setExcludedIds([])
+                }}
+                min={0.5}
+                max={8}
+                step={0.5}
+                marks={[
+                  { value: 1, label: '1' },
+                  { value: 3, label: '3' },
+                  { value: 5, label: '5' },
+                  { value: 8, label: '8' },
+                ]}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(v) => `${v} km`}
               />
-            </Grid>
-            <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Button variant="contained" color="primary" endIcon={<ArrowForwardIcon />} onClick={() => setActiveStep(1)} sx={primaryButtonSx}>
-                Next: Select Customers
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
+              <Typography variant="caption" color="text.secondary">
+                Shops within this distance of the start→end line are included ({formatDistance(corridorSpanKm)} straight-line span).
+              </Typography>
+            </Box>
 
-      {activeStep === 1 && (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Paper sx={{ ...whiteCardSx, p: 0, overflow: 'hidden' }}>
-              <Box sx={{ p: 2, borderBottom: `1px solid ${v.border}` }}>
+            <Grid container spacing={1.5} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
-                  placeholder="Search customers by name, area or category..."
+                  select
                   fullWidth
                   size="small"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: v.textMuted }} /></InputAdornment> } }}
+                  label="Driver / Salesman"
+                  value={driverId}
+                  onChange={(e) => setDriverId(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonIcon sx={{ fontSize: 18, color: v.textMuted }} />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                >
+                  {DRIVERS.map((d) => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {d.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Vehicle"
+                  value={vehicleId}
+                  onChange={(e) => setVehicleId(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocalShippingIcon sx={{ fontSize: 18, color: v.textMuted }} />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                >
+                  {VEHICLES.map((veh) => (
+                    <MenuItem key={veh.id} value={veh.id} disabled={veh.status === 'maintenance'}>
+                      {veh.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="date"
+                  label="Delivery Date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary">{selectedCustomerIds.length} customer(s) selected</Typography>
-                  <Button size="small" onClick={() => setSelectedCustomerIds(filteredCustomers.map((c) => c.id))} sx={{ textTransform: 'none' }}>Select all</Button>
-                </Box>
+              </Grid>
+            </Grid>
+
+            {startId === endId ? (
+              <Alert severity="warning" sx={{ borderRadius: '10px' }}>
+                Choose different start and end locations.
+              </Alert>
+            ) : alongRoute.length === 0 ? (
+              <Alert severity="info" sx={{ borderRadius: '10px' }}>
+                No shops fall within {corridorKm} km of this path. Widen the corridor or pick another end point.
+              </Alert>
+            ) : (
+              <Alert severity="success" icon={<StorefrontIcon />} sx={{ borderRadius: '10px' }}>
+                {alongRoute.length} shop{alongRoute.length === 1 ? '' : 's'} auto-assigned in travel order from start to end.
+              </Alert>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 7 }}>
+          <RouteMap
+            warehouse={mapWarehouse}
+            stops={stops}
+            polyline={polyline}
+            highlightStopId={selectedStopId}
+            onStopClick={(s) => setSelectedStopId(s.id)}
+            height={360}
+            fitKey={`${startId}-${endId}-${stops.length}`}
+          />
+          <Box sx={{ mt: 1.5 }}>
+            <RouteSummaryBar
+              stopCount={stops.length}
+              distanceKm={totalDistanceKm}
+              durationMins={totalDurationMins}
+              optimized
+              routingSource={routingSource}
+              loading={loadingRoute}
+            />
+          </Box>
+        </Grid>
+
+        <Grid size={12}>
+          <Paper sx={{ ...whiteCardSx, p: 2.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Shops along route
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Ordered by latitude/longitude progress from <strong>{start.name}</strong> to <strong>{end.name}</strong>
+                </Typography>
               </Box>
-              <Box sx={{ maxHeight: 460, overflow: 'auto', p: 1 }}>
-                {filteredCustomers.map((c) => {
-                  const checked = selectedCustomerIds.includes(c.id)
+              <Chip
+                size="small"
+                label={`${stops.length} assigned`}
+                sx={{ bgcolor: mix.primary(10), color: colors.primary, fontWeight: 700 }}
+              />
+            </Box>
+
+            {stops.length === 0 ? (
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <StorefrontIcon sx={{ fontSize: 36, color: v.textMuted, mb: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Select start and end locations to list matching customers.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {stops.map((stop, idx) => {
+                  const match = alongRoute.find((c) => c.id === stop.customerId)
+                  const isSelected = selectedStopId === stop.id
                   return (
                     <Box
-                      key={c.id}
-                      onClick={() => toggleCustomer(c.id)}
+                      key={stop.id}
+                      onClick={() => setSelectedStopId(stop.id)}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1,
-                        p: 1,
-                        borderRadius: '10px',
+                        gap: 1.5,
+                        p: 1.25,
+                        borderRadius: '12px',
+                        border: `1px solid ${isSelected ? colors.primary : v.border}`,
+                        bgcolor: isSelected ? mix.primary(6) : v.surface,
                         cursor: 'pointer',
-                        bgcolor: checked ? 'color-mix(in srgb, var(--rs-primary) 8%, transparent)' : 'transparent',
-                        '&:hover': { bgcolor: 'action.hover' },
                       }}
                     >
-                      <Checkbox checked={checked} size="small" />
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{c.name}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap>{c.address}</Typography>
+                      <Box
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          bgcolor: colors.primary,
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {idx + 1}
                       </Box>
-                      <Chip label={c.category} size="small" variant="outlined" sx={{ fontSize: '10px' }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                          {stop.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {stop.address}
+                          {match ? ` · ${formatDistance(match.distanceFromPathKm)} off path` : ''}
+                          {' · '}
+                          {stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}
+                        </Typography>
+                      </Box>
+                      <Chip label={formatDistance(stop.legDistanceKm)} size="small" variant="outlined" sx={{ fontSize: '10px' }} />
+                      <Button
+                        size="small"
+                        color="inherit"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleExclude(stop.customerId)
+                        }}
+                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                      >
+                        Remove
+                      </Button>
                     </Box>
                   )
                 })}
               </Box>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <RouteMap warehouse={warehouse} stops={previewStops} height={460} fitKey={selectedCustomerIds.length} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Button variant="text" color="secondary" startIcon={<ArrowBackIcon />} onClick={() => setActiveStep(0)} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                Back
-              </Button>
+            )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2.5, gap: 1 }}>
+              {excludedIds.length > 0 && (
+                <Button size="small" onClick={() => setExcludedIds([])} sx={{ textTransform: 'none' }}>
+                  Restore removed ({excludedIds.length})
+                </Button>
+              )}
               <Button
                 variant="contained"
                 color="primary"
-                endIcon={<ArrowForwardIcon />}
-                disabled={selectedCustomerIds.length === 0}
-                onClick={handleGoToSequence}
+                startIcon={<SaveIcon />}
+                disabled={stops.length === 0 || loadingRoute || startId === endId}
+                onClick={handleSave}
                 sx={primaryButtonSx}
               >
-                Next: Sequence & Optimize
+                Save Route ({stops.length} stops)
               </Button>
             </Box>
-          </Grid>
+          </Paper>
         </Grid>
-      )}
-
-      {activeStep === 2 && (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <RouteMap warehouse={warehouse} stops={stops} polyline={polyline} highlightStopId={selectedStopId} onStopClick={(s) => setSelectedStopId(s.id)} height={420} fitKey="sequence" />
-            <Box sx={{ mt: 2 }}>
-              <RouteSummaryBar stopCount={stops.length} distanceKm={totalDistanceKm} durationMins={totalDurationMins} optimized={optimized} routingSource={routingSource} loading={loadingRoute} />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Paper sx={{ ...whiteCardSx, p: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Delivery Sequence</Typography>
-                <Button size="small" startIcon={<AutoAwesomeIcon />} onClick={() => runCompute(true)} disabled={loadingRoute} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  Optimize Route
-                </Button>
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                Drag stops to manually reorder, or let the optimizer find the shortest sequence.
-              </Typography>
-              <StopReorderList stops={stops} onReorder={handleReorder} onRemove={handleRemoveStop} onSelect={(s) => setSelectedStopId(s.id)} selectedId={selectedStopId} />
-            </Paper>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Button variant="text" color="secondary" startIcon={<ArrowBackIcon />} onClick={() => setActiveStep(1)} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                Back
-              </Button>
-              <Button variant="contained" color="primary" startIcon={<SaveIcon />} disabled={stops.length === 0 || loadingRoute} onClick={handleSave} sx={primaryButtonSx}>
-                Save Route
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      )}
+      </Grid>
     </PageShell>
   )
 }
