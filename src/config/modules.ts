@@ -499,6 +499,7 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
     ],
     formFields: [],
     entityName: 'Purchase Order',
+    showChart: false,
   }],
   ['purchase-purchases', 'Purchases', 'transaction', 'purchase', {
     columns: [
@@ -551,13 +552,12 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
   }],
   ['purchase-supplier-settlement', 'Supplier Settlement', 'ledger', 'purchase'],
   ['purchase-purchase-return', 'Purchase Returns', 'transaction', 'purchase', {
-    subtitle: 'Track product-based returns to suppliers against purchase invoices',
+    subtitle: 'Track returns to suppliers against purchase invoices',
     entityName: 'Purchase Return',
     showChart: false,
     columns: [
       { field: 'code', header: 'Return #', width: 120 },
       { field: 'supplier', header: 'Supplier', flex: 1 },
-      { field: 'product', header: 'Product', width: 200 },
       { field: 'invoice', header: 'Invoice', width: 130 },
       { field: 'quantity', header: 'Qty Returned', type: 'number', width: 110 },
       { field: 'amount', header: 'Return Value', type: 'currency', width: 120 },
@@ -570,7 +570,14 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
       { key: 'pending', label: 'Pending', format: 'number' },
       { key: 'completed', label: 'Completed', format: 'number' },
     ],
-    formFields: [],
+    formFields: [
+      { name: 'supplier', label: 'Supplier', type: 'text', required: true },
+      { name: 'invoice', label: 'Invoice', type: 'text', required: true },
+      { name: 'quantity', label: 'Qty Returned', type: 'number', required: true },
+      { name: 'amount', label: 'Return Value', type: 'number', required: true },
+      { name: 'date', label: 'Date', type: 'date', required: true },
+      { name: 'status', label: 'Status', type: 'select', options: statusOptions.purchase.map((v) => ({ value: v, label: v })) },
+    ],
   }],
   ['purchase-purchase-report', 'Purchase Report', 'report', 'purchase', {
     columns: [
@@ -605,8 +612,48 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
       { name: 'image', label: 'Product Image', type: 'image', helperText: 'Upload product image (JPG, PNG)' },
     ],
   }],
-  ['inventory-categories', 'Categories', 'inventory', 'inventory'],
-  ['inventory-brands', 'Brands', 'inventory', 'inventory'],
+  ['inventory-categories', 'Categories', 'inventory', 'inventory', {
+    subtitle: 'Manage product categories',
+    columns: [
+      { field: 'code', header: 'Code', width: 120 },
+      { field: 'category', header: 'Category', flex: 1 },
+      { field: 'brand', header: 'Brand', width: 120 },
+      { field: 'stock', header: 'Stock', type: 'number', width: 90 },
+      { field: 'status', header: 'Status', type: 'status', width: 110 },
+    ],
+    formFields: [
+      { name: 'category', label: 'Category Name', type: 'text', required: true },
+      { name: 'brand', label: 'Brand', type: 'text' },
+      { name: 'stock', label: 'Stock Qty', type: 'number' },
+    ],
+    stats: [
+      { key: 'total', label: 'Categories', format: 'number' },
+      { key: 'active', label: 'Active', format: 'number' },
+    ],
+    entityName: 'Category',
+    showChart: false,
+  }],
+  ['inventory-brands', 'Brands', 'inventory', 'inventory', {
+    subtitle: 'Manage product brands',
+    columns: [
+      { field: 'code', header: 'Code', width: 120 },
+      { field: 'brand', header: 'Brand', flex: 1 },
+      { field: 'category', header: 'Category', width: 120 },
+      { field: 'stock', header: 'Stock', type: 'number', width: 90 },
+      { field: 'status', header: 'Status', type: 'status', width: 110 },
+    ],
+    formFields: [
+      { name: 'brand', label: 'Brand Name', type: 'text', required: true },
+      { name: 'category', label: 'Category', type: 'text' },
+      { name: 'stock', label: 'Stock Qty', type: 'number' },
+    ],
+    stats: [
+      { key: 'total', label: 'Brands', format: 'number' },
+      { key: 'active', label: 'Active', format: 'number' },
+    ],
+    entityName: 'Brand',
+    showChart: false,
+  }],
   ['inventory-units', 'Units', 'settings', 'inventory'],
   ['inventory-warehouse', 'Warehouses', 'inventory', 'inventory', {
     documentedFlow: 'stock-management' as const,
@@ -1077,6 +1124,7 @@ const registryEntries: [string, string, LayoutType, string, Partial<ModuleConfig
       { field: 'department', header: 'Department', width: 120 },
       { field: 'payrollMonth', header: 'Payroll Month', width: 130 },
       { field: 'monthlyBase', header: 'Monthly Base', type: 'currency', width: 130 },
+      { field: 'incentiveAmount', header: 'Incentive', type: 'currency', width: 120 },
       { field: 'pendingSalary', header: 'Monthly Pending Salary', type: 'currency', width: 160 },
       { field: 'grossSalary', header: 'Gross Salary', type: 'currency', width: 130 },
       { field: 'totalDeductions', header: 'Total Deductions', type: 'currency', width: 140 },

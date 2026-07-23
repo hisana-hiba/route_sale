@@ -19,6 +19,7 @@ export interface ListParams {
 export type ModuleListParams = ListParams & Partial<PeriodFilterParams> & Partial<{
   route: string
   shopCategory: string
+  warehouse: string
   lastVisitFrom: string
   lastVisitTo: string
   creditMin: string

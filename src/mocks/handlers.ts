@@ -29,8 +29,8 @@ function getStore(slug: string) {
     store.set(slug, fresh)
     return fresh
   }
-  // Refresh purchase return data if older records lack product/invoice fields
-  if (slug === 'purchase-purchase-return' && records.length > 0 && records[0].product == null) {
+  // Refresh purchase return data if older records still include product name
+  if (slug === 'purchase-purchase-return' && records.length > 0 && (records[0].product != null || records[0].invoice == null)) {
     const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
     store.set(slug, fresh)
     return fresh
@@ -66,7 +66,7 @@ function getStore(slug: string) {
     return fresh
   }
   // Refresh payroll data if older records lack payroll-specific fields
-  if (slug === 'hr-payroll' && records.length > 0 && (records[0].payrollMonth == null || records[0].monthlyBase == null)) {
+  if (slug === 'hr-payroll' && records.length > 0 && (records[0].payrollMonth == null || records[0].monthlyBase == null || records[0].incentiveAmount == null)) {
     const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
     store.set(slug, fresh)
     return fresh
@@ -106,6 +106,12 @@ function getStore(slug: string) {
     store.set(slug, fresh)
     return fresh
   }
+  // Refresh current stock data if older records lack date field (needed for date filter)
+  if (slug === 'stock-management-current-stock' && records.length > 0 && records[0].date == null) {
+    const fresh = generateModuleRecords(slug, 55 + (slug.length % 20))
+    store.set(slug, fresh)
+    return fresh
+  }
   return records
 }
 
@@ -127,6 +133,8 @@ function parseListParams(url: URL): ModuleListParams {
     outstandingMin: num('outstandingMin'),
     outstandingMax: num('outstandingMax'),
     view: num('view'),
+    warehouse: num('warehouse'),
+    payrollMonth: num('payrollMonth'),
   }
 }
 
@@ -160,10 +168,33 @@ function applySalesTargetCalculation(body: Record<string, unknown>) {
   return { ...body, targetValue, achievedValue, achievementPercent, status: body.status ?? 'active' }
 }
 
+function applyPayrollCalculation(body: Record<string, unknown>) {
+  const monthlyBase = Number(body.monthlyBase) || 0
+  const pendingSalary = Number(body.pendingSalary) || 0
+  const incentiveAmount = Number(body.incentiveAmount) || 0
+  const totalDeductions = Number(body.totalDeductions) || 0
+  const grossSalary = body.grossSalary != null
+    ? Number(body.grossSalary)
+    : monthlyBase + pendingSalary + incentiveAmount
+  const netSalary = body.netSalary != null
+    ? Number(body.netSalary)
+    : Math.max(0, grossSalary - totalDeductions)
+  return {
+    ...body,
+    monthlyBase,
+    pendingSalary,
+    incentiveAmount,
+    grossSalary,
+    totalDeductions,
+    netSalary,
+    status: body.status ?? 'pending',
+  }
+}
+
 function filter(records: Record<string, unknown>[], params: ModuleListParams) {
   let result = [...records]
   const {
-    search, status, dateFrom, dateTo, route, shopCategory,
+    search, status, dateFrom, dateTo, route, shopCategory, warehouse,
     lastVisitFrom, lastVisitTo, creditMin, creditMax, outstandingMin, outstandingMax,
     view, payrollMonth,
   } = params
@@ -181,6 +212,7 @@ function filter(records: Record<string, unknown>[], params: ModuleListParams) {
   if (dateTo) result = result.filter((r) => String(r.date ?? r.createdAt ?? '').slice(0, 10) <= dateTo)
   if (route) result = result.filter((r) => String(r.route) === route)
   if (shopCategory) result = result.filter((r) => r.shopCategory === shopCategory)
+  if (warehouse) result = result.filter((r) => String(r.warehouse) === warehouse)
   if (lastVisitFrom) result = result.filter((r) => String(r.lastVisit ?? '') >= lastVisitFrom)
   if (lastVisitTo) result = result.filter((r) => String(r.lastVisit ?? '') <= lastVisitTo)
   if (creditMin) result = result.filter((r) => Number(r.creditLimit) >= Number(creditMin))
@@ -343,7 +375,9 @@ export const handlers = [
         ? applyLeaveCalculation(body)
         : slug === 'hr-sales-targets'
           ? applySalesTargetCalculation(body)
-          : body
+          : slug === 'hr-payroll'
+            ? applyPayrollCalculation(body)
+            : body
     const newRecord = {
       id: String(Date.now()),
       code: slug === 'hr-sales-targets'
@@ -375,7 +409,9 @@ export const handlers = [
         ? applyLeaveCalculation(body)
         : slug === 'hr-sales-targets'
           ? applySalesTargetCalculation(body)
-          : body
+          : slug === 'hr-payroll'
+            ? applyPayrollCalculation(body)
+            : body
     records[idx] = { ...records[idx], ...payload, updatedAt: new Date().toISOString() }
     return HttpResponse.json(records[idx])
   }),

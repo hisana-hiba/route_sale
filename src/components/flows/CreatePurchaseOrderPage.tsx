@@ -33,12 +33,29 @@ const SUPPLIERS = [
   'PepsiCo India',
 ]
 
+const UOM_OPTIONS = [
+  { value: 'L', label: 'Litre (L)' },
+  { value: 'ml', label: 'Millilitre (ml)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'pcs', label: 'Pieces (pcs)' },
+  { value: 'dozen', label: 'Dozen' },
+  { value: 'box', label: 'Box' },
+  { value: 'pkt', label: 'Packet' },
+  { value: 'case', label: 'Case' },
+] as const
+
 interface OrderProduct {
   id: string
   name: string
   category: string
   price: number
   unit: string
+}
+
+interface LineSelection {
+  quantity: number
+  uom: string
 }
 
 export function CreatePurchaseOrderPage() {
@@ -51,7 +68,7 @@ export function CreatePurchaseOrderPage() {
   const [warehouse, setWarehouse] = useState('Main Warehouse')
   const [notes, setNotes] = useState('')
   const [productSearch, setProductSearch] = useState('')
-  const [selected, setSelected] = useState<Record<string, number>>({})
+  const [selected, setSelected] = useState<Record<string, LineSelection>>({})
   const [error, setError] = useState('')
 
   const { data: products = [], isLoading } = useQuery({
@@ -62,20 +79,23 @@ export function CreatePurchaseOrderPage() {
   const createOrder = useMutation({
     mutationFn: () => {
       const lineItems = products
-        .filter((p) => (selected[p.id] ?? 0) > 0)
-        .map((p) => ({
-          productId: p.id,
-          name: p.name,
-          category: p.category,
-          unit: p.unit,
-          price: p.price,
-          quantity: selected[p.id],
-          lineTotal: p.price * selected[p.id],
-        }))
+        .filter((p) => (selected[p.id]?.quantity ?? 0) > 0)
+        .map((p) => {
+          const line = selected[p.id]
+          return {
+            productId: p.id,
+            name: p.name,
+            category: p.category,
+            unit: line.uom,
+            price: p.price,
+            quantity: line.quantity,
+            lineTotal: p.price * line.quantity,
+          }
+        })
 
       const totalQuantity = lineItems.reduce((sum, item) => sum + item.quantity, 0)
       const totalPurchase = lineItems.reduce((sum, item) => sum + item.lineTotal, 0)
-      const productList = lineItems.map((item) => item.name).join(', ')
+      const productList = lineItems.map((item) => `${item.name} (${item.quantity} ${item.unit})`).join(', ')
 
       return createItem('/purchase-purchase-orders', {
         supplier,
@@ -106,15 +126,23 @@ export function CreatePurchaseOrderPage() {
     )
   }, [products, productSearch])
 
-  const selectedItems = products.filter((p) => (selected[p.id] ?? 0) > 0)
-  const totalQuantity = selectedItems.reduce((sum, p) => sum + (selected[p.id] ?? 0), 0)
-  const totalPurchase = selectedItems.reduce((sum, p) => sum + p.price * (selected[p.id] ?? 0), 0)
+  const selectedItems = products.filter((p) => (selected[p.id]?.quantity ?? 0) > 0)
+  const totalQuantity = selectedItems.reduce((sum, p) => sum + (selected[p.id]?.quantity ?? 0), 0)
+  const totalPurchase = selectedItems.reduce((sum, p) => sum + p.price * (selected[p.id]?.quantity ?? 0), 0)
 
-  const toggleProduct = (productId: string, checked: boolean) => {
+  const defaultUom = (product: OrderProduct) => {
+    const match = UOM_OPTIONS.find((u) => u.value === product.unit)
+    return match?.value ?? 'pcs'
+  }
+
+  const toggleProduct = (product: OrderProduct, checked: boolean) => {
     setSelected((prev) => {
       const next = { ...prev }
-      if (checked) next[productId] = next[productId] || 1
-      else delete next[productId]
+      if (checked) {
+        next[product.id] = next[product.id] ?? { quantity: 1, uom: defaultUom(product) }
+      } else {
+        delete next[product.id]
+      }
       return next
     })
   }
@@ -122,7 +150,20 @@ export function CreatePurchaseOrderPage() {
   const setQuantity = (productId: string, quantity: number) => {
     setSelected((prev) => ({
       ...prev,
-      [productId]: Math.max(1, quantity),
+      [productId]: {
+        quantity: Math.max(1, quantity),
+        uom: prev[productId]?.uom ?? 'pcs',
+      },
+    }))
+  }
+
+  const setUom = (productId: string, uom: string) => {
+    setSelected((prev) => ({
+      ...prev,
+      [productId]: {
+        quantity: prev[productId]?.quantity ?? 1,
+        uom,
+      },
     }))
   }
 
@@ -217,7 +258,7 @@ export function CreatePurchaseOrderPage() {
             Product List
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Select products and enter the quantity for each item.
+            Select products, enter quantity, and choose the unit of measure.
           </Typography>
 
           <TextField
@@ -238,33 +279,35 @@ export function CreatePurchaseOrderPage() {
                   <TableCell>Category</TableCell>
                   <TableCell align="right">Unit Price</TableCell>
                   <TableCell align="center" width={120}>Quantity</TableCell>
+                  <TableCell align="center" width={150}>Unit of Measure</TableCell>
                   <TableCell align="right">Line Total</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isLoading && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={7}>
                       <Typography variant="body2" color="text.secondary">Loading products...</Typography>
                     </TableCell>
                   </TableRow>
                 )}
                 {!isLoading && filteredProducts.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={7}>
                       <Typography variant="body2" color="text.secondary">No products found.</Typography>
                     </TableCell>
                   </TableRow>
                 )}
                 {filteredProducts.map((product) => {
-                  const qty = selected[product.id] ?? 0
+                  const line = selected[product.id]
+                  const qty = line?.quantity ?? 0
                   const isSelected = qty > 0
                   return (
                     <TableRow key={product.id} hover selected={isSelected}>
                       <TableCell padding="checkbox">
                         <Checkbox
                           checked={isSelected}
-                          onChange={(e) => toggleProduct(product.id, e.target.checked)}
+                          onChange={(e) => toggleProduct(product, e.target.checked)}
                         />
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
@@ -285,6 +328,20 @@ export function CreatePurchaseOrderPage() {
                           }}
                           sx={{ width: 88 }}
                         />
+                      </TableCell>
+                      <TableCell align="center">
+                        <TextField
+                          select
+                          size="small"
+                          disabled={!isSelected}
+                          value={isSelected ? (line?.uom ?? defaultUom(product)) : ''}
+                          onChange={(e) => setUom(product.id, e.target.value)}
+                          sx={{ minWidth: 130 }}
+                        >
+                          {UOM_OPTIONS.map((u) => (
+                            <MenuItem key={u.value} value={u.value}>{u.label}</MenuItem>
+                          ))}
+                        </TextField>
                       </TableCell>
                       <TableCell align="right">
                         {isSelected ? formatCurrency(product.price * qty) : '—'}

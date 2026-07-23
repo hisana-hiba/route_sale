@@ -33,6 +33,9 @@ interface FilterBarProps {
   onMonthFilterChange?: (v: string) => void
   monthOptions?: string[]
   monthFilterLabel?: string
+  warehouseFilter?: string
+  onWarehouseFilterChange?: (v: string) => void
+  warehouseOptions?: string[]
 }
 
 export function FilterBar({
@@ -41,6 +44,7 @@ export function FilterBar({
   onExportExcel, onExportPdf, onPrint, onRefresh,
   showDateFilter = true, showStatusFilter = true, showSearch = true,
   monthFilter, onMonthFilterChange, monthOptions = [], monthFilterLabel = 'Month',
+  warehouseFilter, onWarehouseFilterChange, warehouseOptions = [],
 }: FilterBarProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [extraStatus, setExtraStatus] = useState('')
@@ -96,6 +100,19 @@ export function FilterBar({
         >
           <MenuItem value="">All Months</MenuItem>
           {monthOptions.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+        </TextField>
+      )}
+      {onWarehouseFilterChange && (
+        <TextField
+          select
+          label="Warehouse"
+          value={warehouseFilter ?? ''}
+          onChange={(e) => onWarehouseFilterChange(e.target.value)}
+          size="small"
+          sx={{ minWidth: 170, '& .MuiOutlinedInput-root': inputRootSx }}
+        >
+          <MenuItem value="">All Warehouses</MenuItem>
+          {warehouseOptions.map((w) => <MenuItem key={w} value={w}>{w}</MenuItem>)}
         </TextField>
       )}
       {showStatusFilter && (

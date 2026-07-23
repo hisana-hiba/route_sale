@@ -834,6 +834,7 @@ function ProductCatalogPanel() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM)
   const categories = ['All', ...Array.from(new Set(catalog.map((product) => product.category)))]
@@ -842,6 +843,7 @@ function ProductCatalogPanel() {
     return (category === 'All' || product.category === category)
       && (!query || [product.name, product.category, product.hsn].some((value) => value.toLowerCase().includes(query)))
   })
+  const selectedProduct = visibleProducts.find((p) => p.id === selectedId) ?? visibleProducts[0] ?? null
 
   const openAddDialog = () => {
     setEditingId(null)
@@ -914,94 +916,208 @@ function ProductCatalogPanel() {
           {categories.map((item) => <MenuItem key={item} value={item}>{item === 'All' ? 'All categories' : item}</MenuItem>)}
         </TextField>
       </Box>
-      <Grid container spacing={2}>
-        {visibleProducts.map((p) => (
-          <Grid key={p.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-            <Box sx={{
-              height: '100%', p: 2.25, bgcolor: productCatalog.cardBg,
+
+      <Grid container spacing={2} sx={{ alignItems: 'stretch' }}>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Box
+            sx={{
               border: `1px solid ${productCatalog.cardBorder}`,
               borderRadius: productCatalog.cardRadius,
-              position: 'relative',
-              transition: 'border-color 160ms ease',
-              '&:hover': { borderColor: productCatalog.cardHoverBorder },
-            }}>
-              <Tooltip title="Edit product">
-                <IconButton
-                  size="small"
-                  onClick={() => openEditDialog(p)}
+              bgcolor: productCatalog.cardBg,
+              maxHeight: { xs: 420, md: 560 },
+              overflowY: 'auto',
+            }}
+          >
+            {visibleProducts.map((p) => {
+              const active = selectedProduct?.id === p.id
+              return (
+                <Box
+                  key={p.id}
+                  onClick={() => setSelectedId(p.id)}
                   sx={{
-                    position: 'absolute', top: 8, right: 8, color: productCatalog.muted,
-                    bgcolor: productCatalog.imageBg, '&:hover': { color: colors.primary },
+                    display: 'flex',
+                    gap: 1.5,
+                    alignItems: 'center',
+                    px: 1.75,
+                    py: 1.5,
+                    cursor: 'pointer',
+                    borderBottom: `1px solid ${productCatalog.cardBorder}`,
+                    bgcolor: active ? 'color-mix(in srgb, var(--rs-primary) 8%, white)' : 'transparent',
+                    borderLeft: active ? `3px solid ${colors.primary}` : '3px solid transparent',
+                    transition: 'background-color 140ms ease',
+                    '&:hover': { bgcolor: active ? 'color-mix(in srgb, var(--rs-primary) 10%, white)' : productCatalog.imageBg },
+                    '&:last-child': { borderBottom: 'none' },
                   }}
                 >
-                  <EditOutlinedIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                <Box sx={{
-                  width: 48, height: 48, flexShrink: 0, borderRadius: '12px',
-                  bgcolor: productCatalog.imageBg, display: 'grid', overflow: 'hidden',
-                  placeItems: 'center', color: productCatalog.categoryColor,
-                }}>
-                  {p.image ? (
-                    <Box component="img" src={p.image} alt={p.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>{p.name.charAt(0)}</Typography>
-                  )}
-                </Box>
-                <Box sx={{ minWidth: 0, flex: 1, pr: 3 }}>
-                  <Typography noWrap sx={{ color: colors.textPrimary, fontWeight: 700, fontSize: '0.9rem' }}>
-                    {p.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: productCatalog.muted }}>
-                    {p.category} · HSN {p.hsn}
-                  </Typography>
-                </Box>
-              </Box>
-              {p.packSize && (
-                <Chip
-                  label={p.packSize}
-                  size="small"
-                  sx={{
-                    mt: 1.25, height: 22, fontSize: '0.7rem', fontWeight: 700,
-                    bgcolor: productCatalog.imageBg, color: productCatalog.categoryColor,
-                  }}
-                />
-              )}
-              <Box sx={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                mt: 2, pt: 1.5, borderTop: `1px solid ${productCatalog.cardBorder}`,
-              }}>
-                <Box>
-                  <Typography sx={{ fontSize: '1rem', lineHeight: 1.2, fontWeight: 750, color: colors.textPrimary }}>
-                    {formatCurrency(p.price)}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: productCatalog.muted }}>GST {p.gstRate}%</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Box sx={{
-                    width: 7, height: 7, borderRadius: '50%',
+                    width: 44, height: 44, flexShrink: 0, borderRadius: '10px',
+                    bgcolor: productCatalog.imageBg, display: 'grid', overflow: 'hidden',
+                    placeItems: 'center', color: productCatalog.categoryColor,
+                  }}>
+                    {p.image ? (
+                      <Box component="img" src={p.image} alt={p.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Typography sx={{ fontSize: '0.95rem', fontWeight: 800 }}>{p.name.charAt(0)}</Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography noWrap sx={{ color: colors.textPrimary, fontWeight: 700, fontSize: '0.88rem' }}>
+                      {p.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: productCatalog.muted }}>
+                      {p.category} · {formatCurrency(p.price)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{
+                    width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
                     bgcolor: p.stockQty < 120 ? productCatalog.stockLow : productCatalog.stockHealthy,
                   }} />
-                  <Typography variant="caption" sx={{
-                    color: p.stockQty < 120 ? productCatalog.stockLow : productCatalog.stockHealthy,
-                    fontWeight: 700,
-                  }}>
-                    {p.stockQty} {p.unit}
+                </Box>
+              )
+            })}
+            {visibleProducts.length === 0 && (
+              <Box sx={{ py: 6, textAlign: 'center', px: 2 }}>
+                <Inventory2OutlinedIcon sx={{ fontSize: 36, color: productCatalog.muted, mb: 1 }} />
+                <Typography sx={{ fontWeight: 700, color: colors.textPrimary }}>No products found</Typography>
+                <Typography variant="body2" sx={{ color: productCatalog.muted }}>Try another search or category.</Typography>
+              </Box>
+            )}
+          </Box>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 7 }}>
+          {selectedProduct ? (
+            <Box
+              sx={{
+                height: '100%',
+                minHeight: { xs: 360, md: 560 },
+                p: { xs: 2, md: 2.75 },
+                bgcolor: productCatalog.cardBg,
+                border: `1px solid ${productCatalog.cardBorder}`,
+                borderRadius: productCatalog.cardRadius,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography sx={{ fontWeight: 800, fontSize: '1.15rem', color: colors.textPrimary }}>
+                    Product Preview
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: productCatalog.muted }}>
+                    Updates when you select a product from the list
                   </Typography>
                 </Box>
+                <Tooltip title="Edit product">
+                  <IconButton
+                    size="small"
+                    onClick={() => openEditDialog(selectedProduct)}
+                    sx={{ color: productCatalog.muted, bgcolor: productCatalog.imageBg, '&:hover': { color: colors.primary } }}
+                  >
+                    <EditOutlinedIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+
+              <Box
+                sx={{
+                  flex: 1,
+                  borderRadius: '16px',
+                  bgcolor: productCatalog.imageBg,
+                  border: `1px solid ${productCatalog.cardBorder}`,
+                  display: 'grid',
+                  placeItems: 'center',
+                  overflow: 'hidden',
+                  minHeight: 220,
+                  mb: 2.5,
+                }}
+              >
+                {selectedProduct.image ? (
+                  <Box
+                    component="img"
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    sx={{ width: '100%', height: '100%', maxHeight: 280, objectFit: 'contain', p: 2 }}
+                  />
+                ) : (
+                  <Typography sx={{ fontSize: '4rem', fontWeight: 800, color: productCatalog.categoryColor }}>
+                    {selectedProduct.name.charAt(0)}
+                  </Typography>
+                )}
+              </Box>
+
+              <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: colors.textPrimary, mb: 0.5 }}>
+                {selectedProduct.name}
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
+                <Chip label={selectedProduct.category} size="small" sx={{ fontWeight: 600 }} />
+                {selectedProduct.packSize && (
+                  <Chip
+                    label={selectedProduct.packSize}
+                    size="small"
+                    sx={{ fontWeight: 700, bgcolor: productCatalog.imageBg, color: productCatalog.categoryColor }}
+                  />
+                )}
+                <Chip label={`HSN ${selectedProduct.hsn}`} size="small" variant="outlined" />
+              </Box>
+
+              <Grid container spacing={1.5}>
+                {[
+                  { label: 'Price', value: formatCurrency(selectedProduct.price) },
+                  { label: 'GST', value: `${selectedProduct.gstRate}%` },
+                  { label: 'MRP', value: formatCurrency(selectedProduct.mrp) },
+                  { label: 'MOP', value: formatCurrency(selectedProduct.mop) },
+                  { label: 'Stock', value: `${selectedProduct.stockQty} ${selectedProduct.unit}` },
+                  { label: 'Batch', value: selectedProduct.batch || '—' },
+                  { label: 'Barcode', value: selectedProduct.barcode || '—' },
+                  { label: 'Unit', value: selectedProduct.unit || '—' },
+                ].map((item) => (
+                  <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
+                    <Box
+                      sx={{
+                        p: 1.25,
+                        borderRadius: '12px',
+                        bgcolor: productCatalog.imageBg,
+                        border: `1px solid ${productCatalog.cardBorder}`,
+                        height: '100%',
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: productCatalog.muted, fontWeight: 600 }}>
+                        {item.label}
+                      </Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: colors.textPrimary }}>
+                        {item.value}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                height: '100%',
+                minHeight: 360,
+                display: 'grid',
+                placeItems: 'center',
+                border: `1px dashed ${productCatalog.cardBorder}`,
+                borderRadius: productCatalog.cardRadius,
+                bgcolor: productCatalog.cardBg,
+                p: 3,
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Inventory2OutlinedIcon sx={{ fontSize: 48, color: productCatalog.muted, mb: 1 }} />
+                <Typography sx={{ fontWeight: 700 }}>Select a product</Typography>
+                <Typography variant="body2" sx={{ color: productCatalog.muted }}>
+                  Choose an item from the list to preview details
+                </Typography>
               </Box>
             </Box>
-          </Grid>
-        ))}
+          )}
+        </Grid>
       </Grid>
-      {visibleProducts.length === 0 && (
-        <Box sx={{ py: 6, textAlign: 'center' }}>
-          <Inventory2OutlinedIcon sx={{ fontSize: 42, color: productCatalog.muted, mb: 1 }} />
-          <Typography sx={{ fontWeight: 700, color: colors.textPrimary }}>No products found</Typography>
-          <Typography variant="body2" sx={{ color: productCatalog.muted }}>Try another search or category.</Typography>
-        </Box>
-      )}
+
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

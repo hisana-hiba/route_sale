@@ -33,6 +33,8 @@ import { v } from '@/theme/cssVars'
 
 const CONFIG_PATH = '/stock-management/current-stock'
 
+const WAREHOUSE_OPTIONS = ['Main Warehouse', 'Cold Storage', 'Depot North', 'Depot South']
+
 /** Shared fixed height for the warehouse-distribution and low-stock-alert cards so
  *  neither one stretches to leave empty space — the alerts list scrolls internally instead. */
 const SIDE_PANEL_HEIGHT = 360
@@ -50,18 +52,36 @@ export function CurrentStockPage() {
   const themeMode = useAppStore((s) => s.themeMode)
   const themeVersion = useAppStore((s) => s.themeVersion)
 
+  const [warehouseFilter, setWarehouseFilter] = useState('')
+
+  const stockExtraParams = useMemo(
+    () => (warehouseFilter ? { warehouse: warehouseFilter } : undefined),
+    [warehouseFilter],
+  )
+
   const {
     data, isLoading, isFetching, refetch,
     page, setPage, pageSize, setPageSize,
     search, setSearch, statusFilter, setStatusFilter,
     dateFrom, setDateFrom, dateTo, setDateTo,
     deleteMutation,
-  } = useModuleData(config)
+  } = useModuleData(config, undefined, stockExtraParams)
 
-  // Full dataset (unpaged) for the analytics widgets
+  // Full dataset (unpaged) for the analytics widgets — respects active filters
   const { data: analytics } = useQuery({
-    queryKey: ['module', config.slug, 'analytics'],
-    queryFn: () => fetchList(`/${config.slug}`, { page: 1, pageSize: 500 }) as Promise<ModuleListResponse>,
+    queryKey: [
+      'module', config.slug, 'analytics',
+      warehouseFilter, dateFrom?.format('YYYY-MM-DD'), dateTo?.format('YYYY-MM-DD'), statusFilter, search,
+    ],
+    queryFn: () => fetchList(`/${config.slug}`, {
+      page: 1,
+      pageSize: 500,
+      warehouse: warehouseFilter || undefined,
+      dateFrom: dateFrom?.format('YYYY-MM-DD'),
+      dateTo: dateTo?.format('YYYY-MM-DD'),
+      status: statusFilter || undefined,
+      search: search || undefined,
+    }) as Promise<ModuleListResponse>,
   })
   const allRows = analytics?.data ?? []
 
@@ -331,11 +351,13 @@ export function CurrentStockPage() {
             statuses={config.statuses}
             dateFrom={dateFrom} dateTo={dateTo}
             onDateFromChange={setDateFrom} onDateToChange={setDateTo}
+            warehouseFilter={warehouseFilter}
+            onWarehouseFilterChange={setWarehouseFilter}
+            warehouseOptions={WAREHOUSE_OPTIONS}
             onExportExcel={() => exportToExcel(rows, config.slug, exportCols)}
             onExportPdf={() => exportToPdf(rows, config.slug, config.title, exportCols)}
             onPrint={() => printTable(config.title)}
             onRefresh={() => refetch()}
-            showDateFilter={false}
           />
         </Box>
         <Box

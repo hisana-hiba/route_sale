@@ -1,4 +1,7 @@
 import type { RecordStatus } from '@/types/module'
+import { calculateAchievementPercent, calculateIncentive } from '@/utils/hrCalc'
+
+export { calculateAchievementPercent, calculateIncentive }
 
 const customers = [
   'Ahmad Traders', 'Green Valley Store', 'City Mart', 'Sunrise Distributors',
@@ -226,7 +229,6 @@ function invoice(slug: string, i: number) {
 }
 
 function purchaseReturnRecord(_slug: string, i: number) {
-  const product = products[i % products.length]
   const quantity = amount(1, 80)
   const unitPrice = amount(25, 450)
   const amt = quantity * unitPrice
@@ -235,7 +237,6 @@ function purchaseReturnRecord(_slug: string, i: number) {
     id: nextId(),
     code: `PR-${String(i + 1).padStart(5, '0')}`,
     supplier: pick(suppliers),
-    product,
     invoice: `PI-${String(amount(1000, 9999))}`,
     quantity,
     amount: amt,
@@ -306,27 +307,6 @@ function routeRecord(slug: string, i: number) {
   }
 }
 
-const INCENTIVE_ROLES = ['Salesman', 'Delivery Agent', 'Driver', 'Manager'] as const
-const INCENTIVE_ROLE_BASE: Record<string, number> = {
-  Salesman: 15000,
-  'Delivery Agent': 8000,
-  Driver: 6000,
-  Manager: 20000,
-}
-
-export function calculateIncentive(role: string, target: number, achieved: number) {
-  const safeTarget = Math.max(target, 1)
-  const achievementPercent = Math.round((achieved / safeTarget) * 100)
-  const base = INCENTIVE_ROLE_BASE[role] ?? 10000
-  let incentiveEarned = 0
-  if (achievementPercent >= 100) {
-    incentiveEarned = Math.round(base * (1 + (achievementPercent - 100) / 200))
-  } else if (achievementPercent >= 70) {
-    incentiveEarned = Math.round(base * (achievementPercent / 100))
-  }
-  return { achievementPercent, incentiveEarned }
-}
-
 function incentiveRecord(_slug: string, i: number) {
   const roleProfiles = [
     { name: 'Rahul Sharma', role: 'Salesman', employeeId: 'EMP-0001' },
@@ -362,11 +342,6 @@ function incentiveRecord(_slug: string, i: number) {
     status: pick(['pending', 'approved', 'completed'] as RecordStatus[]),
     createdAt: new Date().toISOString(),
   }
-}
-
-export function calculateAchievementPercent(targetValue: number, achievedValue: number) {
-  const safeTarget = Math.max(targetValue, 1)
-  return Math.round((achievedValue / safeTarget) * 100)
 }
 
 function salesTargetRecord(_slug: string, i: number) {
@@ -408,6 +383,7 @@ function salesTargetRecord(_slug: string, i: number) {
     achievementPercent: calculateAchievementPercent(targetValue, achievedValue),
     startDate,
     endDate,
+    period: ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026'][i % 7],
     status: pick(['active', 'pending', 'completed'] as RecordStatus[]),
     createdAt: new Date().toISOString(),
   }
@@ -482,7 +458,8 @@ function payrollRecord(_slug: string, i: number) {
   const months = ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026']
   const monthlyBase = amount(18000, 55000)
   const pendingSalary = amount(0, 15000)
-  const gross = monthlyBase + pendingSalary
+  const incentiveAmount = emp.dept === 'Sales' ? amount(2000, 18000) : amount(0, 5000)
+  const gross = monthlyBase + pendingSalary + incentiveAmount
   const deductions = amount(1000, 8000)
   return {
     id: nextId(),
@@ -493,9 +470,11 @@ function payrollRecord(_slug: string, i: number) {
     payrollMonth: months[i % months.length],
     monthlyBase,
     pendingSalary,
+    incentiveAmount,
     grossSalary: gross,
     totalDeductions: deductions,
     netSalary: Math.max(0, gross - deductions),
+    payslipGenerated: false,
     status: pick(['pending', 'approved', 'completed', 'rejected'] as RecordStatus[]),
     createdAt: new Date().toISOString(),
   }
@@ -712,6 +691,7 @@ function gstRecord(slug: string, i: number) {
 function currentStockRecord(slug: string, i: number) {
   const stock = amount(0, 800)
   const min = amount(50, 200)
+  const stockDate = date(Math.floor(Math.random() * 90))
   return {
     id: nextId(), code: `PRD-${String(i + 1).padStart(5, '0')}`,
     name: products[i % products.length],
@@ -722,8 +702,9 @@ function currentStockRecord(slug: string, i: number) {
     stock, minStock: min,
     mrp: amount(20, 500),
     amount: amount(20, 500) * stock,
+    date: stockDate,
     status: stock === 0 ? 'overdue' as RecordStatus : stock < min ? 'low_stock' as RecordStatus : 'active' as RecordStatus,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(stockDate).toISOString(),
   }
 }
 

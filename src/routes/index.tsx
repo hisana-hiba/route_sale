@@ -40,6 +40,9 @@ import { ReceiptPage } from '@/pages/accounts/ReceiptPage'
 import { JournalPage } from '@/pages/accounts/JournalPage'
 import { ProfitLossPage } from '@/pages/accounts/ProfitLossPage'
 import { BalanceSheetPage } from '@/pages/accounts/BalanceSheetPage'
+import { SalesTargetsPage } from '@/pages/hr/SalesTargetsPage'
+import { IncentivesPage } from '@/pages/hr/IncentivesPage'
+import { PayrollPage } from '@/pages/hr/PayrollPage'
 
 export function AppRoutes() {
   const moduleRoutes = allRoutes.filter(
@@ -72,7 +75,10 @@ export function AppRoutes() {
       item.path !== '/stock-management/current-stock' &&
       item.path !== '/stock-management/low-stock' &&
       item.path !== '/stock-management/expiry-report' &&
-      item.path !== '/stock-management/warehouse',
+      item.path !== '/stock-management/warehouse' &&
+      item.path !== '/hr/payroll' &&
+      item.path !== '/hr/incentives' &&
+      item.path !== '/hr/sales-targets',
   )
 
   return (
@@ -128,6 +134,11 @@ export function AppRoutes() {
         <Route path="accounting/journal" element={<JournalPage />} />
         <Route path="accounting/profit-loss" element={<ProfitLossPage />} />
         <Route path="accounting/balance-sheet" element={<BalanceSheetPage />} />
+
+        {/* HR Target → Incentive → Payroll flow */}
+        <Route path="hr/sales-targets" element={<SalesTargetsPage />} />
+        <Route path="hr/incentives" element={<IncentivesPage />} />
+        <Route path="hr/payroll" element={<PayrollPage />} />
 
         {moduleRoutes.map((item) => (
           <Route key={item.path} path={item.path!.replace(/^\//, '')} element={<ModulePage />} />
