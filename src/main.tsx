@@ -8,22 +8,8 @@ import './index.css'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-async function enableMocking() {
-  if (import.meta.env.PROD) return
-  try {
-    const { worker } = await import('./mocks/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
-  } catch (err) {
-    console.warn('MSW failed to start — app will run without mocks', err)
-  }
-}
-
-function renderApp() {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  )
-}
-
-enableMocking().then(renderApp).catch(renderApp)
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)

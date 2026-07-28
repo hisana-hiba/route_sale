@@ -49,6 +49,8 @@ export type DocumentedFlow =
   | 'stock-transfer'
   | 'purchase-order'
   | 'add-collection'
+  | 'add-expense'
+  | 'add-vehicle-log'
   | 'add-quotation'
   | 'e-way-bill'
   | 'multi-assign-route'

@@ -53,7 +53,7 @@ export const navigation: NavItem[] = [
       { id: 'rs-dashboard', label: 'Dashboard', path: '/route-sales/dashboard' },
       //{ id: 'field-day', label: 'Field Day', path: '/route-sales/field-day' },
       { id: 'route-builder', label: 'Route Creation', path: '/route-sales/route-builder' },
-      { id: 'route-planner', label: 'Route Planner (Map)', path: '/route-sales/route-planner' },
+      { id: 'route history', label: 'Route history', path: '/route-sales/route-history' },
       { id: 'my-routes', label: 'My Routes (Driver)', path: '/route-sales/my-routes' },
       //{ id: 'route-assignment', label: 'Route Assignment', path: '/route-sales/route-assignment' },
       //{ id: 'todays-routes', label: "Today's Routes", path: '/route-sales/todays-routes' },
@@ -127,6 +127,7 @@ export const navigation: NavItem[] = [
     children: [
      
       { id: 'vehicles', label: 'Vehicles', path: '/logistics/vehicle-management' },
+      { id: 'vehicle-log', label: 'Vehicle Log', path: '/logistics/vehicle-log' },
       { id: 'drivers', label: 'Drivers', path: '/logistics/driver-management' },
       
       { id: 'e-way-bills', label: 'E-Way Bills (EWB)', path: '/logistics/e-way-bills' },
@@ -235,6 +236,7 @@ const _allPaths = flattenNav([
       { id: 'hr-roles', label: 'Roles & Permissions', path: '/hr/roles-permissions' },
       { id: 'log-dispatch', label: 'Dispatch', path: '/logistics/dispatch' },
       { id: 'log-vehicles', label: 'Vehicles', path: '/logistics/vehicle-management' },
+      { id: 'log-vehicle-log', label: 'Vehicle Log', path: '/logistics/vehicle-log' },
       { id: 'log-drivers', label: 'Drivers', path: '/logistics/driver-management' },
       { id: 'log-tracking', label: 'Live Tracking', path: '/logistics/live-tracking' },
       { id: 'log-eway', label: 'E-Way Bills', path: '/logistics/e-way-bills' },

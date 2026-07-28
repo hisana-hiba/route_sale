@@ -12,6 +12,8 @@ import { CreatePurchaseOrderPage } from '@/components/flows/CreatePurchaseOrderP
 import { SalesEntryPage } from '@/pages/sales/SalesEntryPage'
 import { SalePriceEntryPage } from '@/pages/sales/SalePriceEntryPage'
 import { CollectionFormPage } from '@/pages/collections/CollectionFormPage'
+import { ExpenseFormPage } from '@/pages/expenses/ExpenseFormPage'
+import { VehicleLogFormPage } from '@/pages/logistics/VehicleLogFormPage'
 import { QuotationFormPage } from '@/pages/quotations/QuotationFormPage'
 import { SalesReturnSettingsPage } from '@/pages/sales/SalesReturnSettingsPage'
 import { ProtectedRoute } from './ProtectedRoute'
@@ -24,7 +26,7 @@ import { RouteAssignmentPage } from '@/pages/route/RouteAssignmentPage'
 import { TodayRoutePage } from '@/pages/route/TodayRoutePage'
 import { WeeklySchedulePage } from '@/pages/route/WeeklySchedulePage'
 import { RouteBuilderPage } from '@/pages/route/RouteBuilderPage'
-import { RoutePlannerPage } from '@/pages/route/RoutePlannerPage'
+import { RouteHistoryPage } from '@/pages/route/RouteHistoryPage'
 import { MyRoutesPage } from '@/pages/route/MyRoutesPage'
 import { RouteExecutionPage } from '@/pages/route/RouteExecutionPage'
 import { FieldDayFlowPage } from '@/pages/route/FieldDayFlowPage'
@@ -102,6 +104,8 @@ export function AppRoutes() {
         <Route path="sales/sales-return/new" element={<SalesReturnWizard />} />
         <Route path="sales/sales-return/settings" element={<SalesReturnSettingsPage />} />
         <Route path="route-sales/collections/new" element={<CollectionFormPage />} />
+        <Route path="route-sales/expenses/new" element={<ExpenseFormPage />} />
+        <Route path="logistics/vehicle-log/new" element={<VehicleLogFormPage />} />
         <Route path="sales/quotations/new" element={<QuotationFormPage />} />
         <Route path="stock-management/stock-transfer/new" element={<CreateStockTransferPage />} />
         <Route path="purchase/purchase-orders/new" element={<CreatePurchaseOrderPage />} />
@@ -117,7 +121,7 @@ export function AppRoutes() {
         <Route path="route-sales/field-day" element={<FieldDayFlowPage />} />
         <Route path="route-sales/add-route" element={<AddRoutePage />} />
         <Route path="route-sales/route-builder" element={<RouteBuilderPage />} />
-        <Route path="route-sales/route-planner" element={<RoutePlannerPage />} />
+        //<Route path="route-sales/route-history" element={<RouteHistoryPage/>} />
         <Route path="route-sales/my-routes" element={<MyRoutesPage />} />
         <Route path="route-sales/my-routes/:routeId" element={<RouteExecutionPage />} />
         <Route path="route-sales/route-assignment" element={<RouteAssignmentPage />} />

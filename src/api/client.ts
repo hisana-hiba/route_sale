@@ -1,11 +1,14 @@
-import axios from 'axios'
 import type { ModuleListResponse } from '@/types/module'
 import type { PeriodFilterParams } from '@/types/period'
-
-export const api = axios.create({
-  baseURL: '/api',
-  timeout: 15000,
-})
+import {
+  listModule,
+  getModuleRecord,
+  createModuleRecord,
+  updateModuleRecord,
+  deleteModuleRecord,
+  getDashboard,
+  getTopSalesShops,
+} from '@/mocks/moduleApi'
 
 export interface ListParams {
   page?: number
@@ -30,26 +33,36 @@ export type ModuleListParams = ListParams & Partial<PeriodFilterParams> & Partia
   payrollMonth: string
 }>
 
-export async function fetchList<T>(endpoint: string, params: ModuleListParams = {}): Promise<ModuleListResponse> {
-  const { data } = await api.get<ModuleListResponse>(endpoint, { params })
-  return data
+/** Mock-only client — no HTTP. Keeps the same helpers pages already import. */
+export const api = {
+  async get<T>(url: string, config?: { params?: ModuleListParams }): Promise<{ data: T }> {
+    const path = url.replace(/^\//, '')
+    if (path === 'dashboard') {
+      return { data: getDashboard() as T }
+    }
+    if (path === 'customers/top-sales-shops' || path.startsWith('customers/top-sales-shops')) {
+      return { data: getTopSalesShops(config?.params) as T }
+    }
+    throw new Error(`Mock API: unknown GET /${path}`)
+  },
+}
+
+export async function fetchList(endpoint: string, params: ModuleListParams = {}): Promise<ModuleListResponse> {
+  return listModule(endpoint, params)
 }
 
 export async function fetchOne<T>(endpoint: string, id: string): Promise<T> {
-  const { data } = await api.get<T>(`${endpoint}/${id}`)
-  return data
+  return getModuleRecord<T>(endpoint, id)
 }
 
 export async function createItem<T>(endpoint: string, payload: Partial<T>): Promise<T> {
-  const { data } = await api.post<T>(endpoint, payload)
-  return data
+  return createModuleRecord<T>(endpoint, payload as Record<string, unknown>)
 }
 
 export async function updateItem<T>(endpoint: string, id: string, payload: Partial<T>): Promise<T> {
-  const { data } = await api.put<T>(`${endpoint}/${id}`, payload)
-  return data
+  return updateModuleRecord<T>(endpoint, id, payload as Record<string, unknown>)
 }
 
 export async function deleteItem(endpoint: string, id: string): Promise<void> {
-  await api.delete(`${endpoint}/${id}`)
+  deleteModuleRecord(endpoint, id)
 }

@@ -140,6 +140,14 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
       navigate('/route-sales/collections/new')
       return
     }
+    if (config.documentedFlow === 'add-expense') {
+      navigate('/route-sales/expenses/new')
+      return
+    }
+    if (config.documentedFlow === 'add-vehicle-log') {
+      navigate('/logistics/vehicle-log/new')
+      return
+    }
     if (config.documentedFlow === 'add-quotation') {
       navigate('/sales/quotations/new')
       return
@@ -234,7 +242,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
           : [{ label: 'Home', path: '/' }, { label: config.title }]
       }
       actions={
-        !isProductCatalogPage && config.documentedFlow !== 'e-way-bill' && config.documentedFlow !== 'employee-directory' && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-quotation') ? (
+        !isProductCatalogPage && config.documentedFlow !== 'e-way-bill' && config.documentedFlow !== 'employee-directory' && (config.formFields.length > 0 || config.documentedFlow === 'new-order' || config.documentedFlow === 'sales-return' || config.documentedFlow === 'stock-transfer' || config.documentedFlow === 'purchase-order' || config.documentedFlow === 'add-collection' || config.documentedFlow === 'add-expense' || config.documentedFlow === 'add-vehicle-log' || config.documentedFlow === 'add-quotation') ? (
           <Box sx={{ display: 'flex', gap: 1 }}>
             {isSalesReturnPage && (
               <Button
@@ -247,7 +255,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
               </Button>
             )}
             <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={openCreateDialog} sx={primaryButtonSx}>
-              {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
+              {config.documentedFlow === 'new-order' ? 'New Order' : config.documentedFlow === 'sales-return' ? 'New Return' : config.documentedFlow === 'stock-transfer' ? 'New Transfer' : config.documentedFlow === 'purchase-order' ? 'New Purchase Order' : config.documentedFlow === 'add-collection' ? 'Add Collection' : config.documentedFlow === 'add-expense' ? 'Add Expense' : config.documentedFlow === 'add-vehicle-log' ? 'Add Vehicle Log' : config.documentedFlow === 'add-quotation' ? 'Add Quotation' : `Add ${config.entityName}`}
             </Button>
           </Box>
         ) : undefined
@@ -255,7 +263,7 @@ export function ModuleLayout({ config }: ModuleLayoutProps) {
     >
       {isSalesReturnPage && <SalesTabs />}
 
-      {config.documentedFlow && config.documentedFlow !== 'new-order' && config.documentedFlow !== 'stock-transfer' && config.documentedFlow !== 'purchase-order' && config.documentedFlow !== 'add-collection' && config.documentedFlow !== 'add-quotation' && (
+      {config.documentedFlow && config.documentedFlow !== 'new-order' && config.documentedFlow !== 'stock-transfer' && config.documentedFlow !== 'purchase-order' && config.documentedFlow !== 'add-collection' && config.documentedFlow !== 'add-expense' && config.documentedFlow !== 'add-vehicle-log' && config.documentedFlow !== 'add-quotation' && (
         <DocumentedFlowPanel flow={config.documentedFlow} />
       )}
 

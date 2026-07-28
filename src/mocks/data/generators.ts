@@ -175,6 +175,9 @@ export function computeStats(records: Record<string, unknown>[], statKeys: strin
     else if (key === 'totalOutstanding') stats.totalOutstanding = records.reduce((s, r) => s + (Number(r.outstanding) || 0), 0)
     else if (key === 'totalDebit') stats.totalDebit = records.reduce((s, r) => s + (Number(r.debit) || 0), 0)
     else if (key === 'totalCreditBal') stats.totalCreditBal = records.reduce((s, r) => s + (Number(r.credit) || 0), 0)
+    else if (key === 'totalDistance') stats.totalDistance = records.reduce((s, r) => s + (Number(r.distance) || 0), 0)
+    else if (key === 'totalFuelLiters') stats.totalFuelLiters = records.reduce((s, r) => s + (Number(r.fuelLiters) || 0), 0)
+    else if (key === 'totalFuelCost') stats.totalFuelCost = records.reduce((s, r) => s + (Number(r.fuelCost) || Number(r.fuelAmount) || 0), 0)
     else if (key === 'totalRevenue') {
       stats.totalRevenue = records.reduce((s, r) => s + (Number(r.total) || Number(r.amount) || 0), 0)
     }
@@ -588,18 +591,69 @@ function routePerformanceOrder(slug: string, i: number) {
 
 function expenseRecord(slug: string, i: number) {
   const amt = amount(500, 25000)
+  const account = pick(['Fuel', 'Travel', 'Food', 'Maintenance', 'Miscellaneous'])
+  const vehicleNumber = vehicles[i % vehicles.length]
+  const isFuel = account === 'Fuel'
+  const fuelLiters = isFuel ? amount(20, 60) : 0
   return {
     id: nextId(), code: `EXP-${String(i + 1).padStart(5, '0')}`,
     date: date(Math.floor(Math.random() * 60)),
-    account: pick(['Fuel', 'Travel', 'Meals', 'Maintenance', 'Miscellaneous']),
+    account,
     narration: pick([
       'Fuel for Route A delivery vehicle', 'Client meeting travel allowance',
       'Field staff lunch reimbursement', 'Vehicle maintenance — oil change',
       'Miscellaneous route expenses',
     ]),
-    debit: amt, credit: 0, balance: amt,
-    salesman: pick(salesmen), route: pick(routes),
+    debit: amt, credit: 0, balance: amt, amount: amt,
+    salesman: pick(salesmen),
+    employeeRole: pick(['salesman', 'deliveryAgent']),
+    vehicle: account === 'Fuel' || account === 'Maintenance'
+      ? `${vehicleNumber} — Fleet vehicle`
+      : '',
+    vehicleNumber: account === 'Fuel' || account === 'Maintenance' ? vehicleNumber : '',
+    fuelLiters: isFuel ? fuelLiters : undefined,
+    fuelCost: isFuel ? amt : undefined,
+    receipt: '',
+    hasReceipt: pick(['Yes', 'No']),
+    route: pick(routes),
     status: pick(['completed', 'pending', 'draft'] as RecordStatus[]),
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function vehicleLogRecord(_slug: string, i: number) {
+  const opening = amount(12000, 85000)
+  const distance = amount(40, 220)
+  const closing = opening + distance
+  const fuelLiters = i % 3 === 0 ? 0 : amount(15, 55)
+  const fuelCost = fuelLiters > 0 ? fuelLiters * amount(90, 110) : 0
+  const role = pick(['salesman', 'deliveryAgent'] as const)
+  const vehicleNumber = vehicles[i % vehicles.length]
+  const vehicleNames = ['Tata Ace', 'Mahindra Bolero Pickup', 'Ashok Leyland Dost', 'Eicher Pro 2049']
+  const vehicleName = vehicleNames[i % vehicleNames.length]
+  return {
+    id: nextId(),
+    code: `VLOG-${String(i + 1).padStart(5, '0')}`,
+    date: date(Math.floor(Math.random() * 45)),
+    vehicle: `${vehicleNumber} — ${vehicleName}`,
+    vehicleNumber,
+    vehicleName,
+    employee: pick(salesmen),
+    employeeRole: role,
+    roleLabel: role === 'deliveryAgent' ? 'Delivery Agent' : 'Salesman',
+    openingOdometer: opening,
+    closingOdometer: closing,
+    distance,
+    fuelLiters,
+    fuelCost,
+    fuelAmount: fuelCost,
+    remarks: pick([
+      'Morning route North zone', 'Afternoon delivery run', 'Shared vehicle for field day',
+      'Returned to depot after Route B', '',
+    ]),
+    fuelReceipt: '',
+    hasFuelReceipt: fuelLiters > 0 ? pick(['Yes', 'No']) : '—',
+    status: pick(['completed', 'pending'] as RecordStatus[]),
     createdAt: new Date().toISOString(),
   }
 }
@@ -1041,7 +1095,8 @@ const generatorMap: Record<string, (slug: string, i: number) => Record<string, u
   'hr-leave-management': leaveRecord, 'hr-roles-permissions': employeeRecord,
   // Logistics
   'logistics-delivery-schedule': logisticsRecord, 'logistics-dispatch': logisticsRecord,
-  'logistics-vehicle-management': vehicleRecord, 'logistics-driver-management': driverRecord,
+  'logistics-vehicle-management': vehicleRecord, 'logistics-vehicle-log': vehicleLogRecord,
+  'logistics-driver-management': driverRecord,
   'logistics-live-tracking': trackingRecord, 'logistics-e-way-bills': ewayBillRecord,
   // Reports
   'reports-sales-report': salesOrder, 'reports-purchase-report': purchaseReportRecord,
