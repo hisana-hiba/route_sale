@@ -49,15 +49,15 @@ function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }
 
-export function RoutePlannerPage() {
+export function RouteHistoryPage() {
   return (
     <RoleGuard allowedRoles={['admin', 'manager']} redirectPath="/route-sales/my-routes" redirectLabel="Go to My Routes">
-      <RoutePlannerContent />
+      <RouteHistoryContent />
     </RoleGuard>
   )
 }
 
-function RoutePlannerContent() {
+function RouteHistoryContent() {
   const navigate = useNavigate()
   const { routes, deleteRoute, assignDriver } = useManagedRoutes()
 
@@ -102,12 +102,12 @@ function RoutePlannerContent() {
 
   return (
     <PageShell
-      title="Route Planner"
+      title="Route History"
       subtitle="Search, filter, and assign delivery routes to drivers and salesmen"
       breadcrumbs={[
         { label: 'Home', path: '/' },
         { label: 'Route Management' },
-        { label: 'Route Planner' },
+        { label: 'Route History' },
       ]}
       actions={
         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => navigate('/route-sales/route-builder')} sx={primaryButtonSx}>

@@ -53,7 +53,7 @@ export const navigation: NavItem[] = [
       { id: 'rs-dashboard', label: 'Dashboard', path: '/route-sales/dashboard' },
       //{ id: 'field-day', label: 'Field Day', path: '/route-sales/field-day' },
       { id: 'route-builder', label: 'Route Creation', path: '/route-sales/route-builder' },
-      { id: 'route history', label: 'Route history', path: '/route-sales/route-history' },
+      { id: 'route-history', label: 'Route History', path: '/route-sales/route-history' },
       { id: 'my-routes', label: 'My Routes (Driver)', path: '/route-sales/my-routes' },
       //{ id: 'route-assignment', label: 'Route Assignment', path: '/route-sales/route-assignment' },
       //{ id: 'todays-routes', label: "Today's Routes", path: '/route-sales/todays-routes' },

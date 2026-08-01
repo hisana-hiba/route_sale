@@ -204,10 +204,10 @@ export function RouteDashboardPage() {
             variant="outlined"
             color="primary"
             startIcon={<RouteIcon />}
-            onClick={() => navigate('/route-sales/route-planner')}
+            onClick={() => navigate('/route-sales/route-history')}
             sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
           >
-            Route Planner
+            Route History
           </Button>
           <Button
             variant="contained"

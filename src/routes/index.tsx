@@ -59,6 +59,7 @@ export function AppRoutes() {
       item.path !== '/sales/sale-price-entry' &&
       item.path !== '/route-sales/dashboard' &&
       item.path !== '/route-sales/route-builder' &&
+      item.path !== '/route-sales/route-history' &&
       item.path !== '/route-sales/route-planner' &&
       item.path !== '/route-sales/my-routes' &&
       item.path !== '/route-sales/route-assignment' &&
@@ -121,7 +122,8 @@ export function AppRoutes() {
         <Route path="route-sales/field-day" element={<FieldDayFlowPage />} />
         <Route path="route-sales/add-route" element={<AddRoutePage />} />
         <Route path="route-sales/route-builder" element={<RouteBuilderPage />} />
-        //<Route path="route-sales/route-history" element={<RouteHistoryPage/>} />
+        <Route path="route-sales/route-history" element={<RouteHistoryPage />} />
+        <Route path="route-sales/route-planner" element={<Navigate to="/route-sales/route-history" replace />} />
         <Route path="route-sales/my-routes" element={<MyRoutesPage />} />
         <Route path="route-sales/my-routes/:routeId" element={<RouteExecutionPage />} />
         <Route path="route-sales/route-assignment" element={<RouteAssignmentPage />} />

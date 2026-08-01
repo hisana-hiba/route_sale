@@ -171,7 +171,7 @@ function RouteBuilderContent() {
       optimized: true,
       routingSource,
     })
-    navigate('/route-sales/route-planner')
+    navigate('/route-sales/route-history')
   }
 
   const mapWarehouse: WarehouseRecord = {
@@ -185,7 +185,7 @@ function RouteBuilderContent() {
       subtitle="Set start and end locations — shops along the path are auto-assigned in travel order"
       breadcrumbs={[
         { label: 'Home', path: '/' },
-        { label: 'Route Management', path: '/route-sales/route-planner' },
+        { label: 'Route Management', path: '/route-sales/route-history' },
         { label: 'Route Builder' },
       ]}
       actions={
@@ -193,10 +193,10 @@ function RouteBuilderContent() {
           variant="outlined"
           color="secondary"
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/route-sales/route-planner')}
+          onClick={() => navigate('/route-sales/route-history')}
           sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
         >
-          Back to Route Planner
+          Back to Route History
         </Button>
       }
     >
